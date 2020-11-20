@@ -1,11 +1,10 @@
 import numpy as np
 import tensorflow as tf
 
-
-class PolicyGradientAgent(tf.keras.models):
-    def __init__(self, state_size, num_stocks):
+class PolicyGradientAgent(tf.keras.Model):
+    def __init__(self, state_size, num_stocks, RESUME=False):
         """
-        this class inherits from tf.keras.models
+        this class inherits from tf.keras.Model
         a general class of policy gradient RL agents using actor-critic
 
         :param state_size: the size of the state space, passed in from preprocessing
