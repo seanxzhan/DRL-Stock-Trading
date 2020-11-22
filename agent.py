@@ -3,10 +3,11 @@ import tensorflow as tf
 import random
 
 
-class PolicyGradientAgent(tf.keras.models):
-    def __init__(self, state_size, num_stocks, past_num, resume):
+
+class PolicyGradientAgent(tf.keras.Model):
+    def __init__(self, state_size, num_stocks, past_num, resume=False):
         """
-        this class inherits from tf.keras.models
+        this class inherits from tf.keras.Model
         a general class of policy gradient RL agents using actor-critic
         assume this agent can manage num_stocks stocks at the same time, and the agent's actions have no impact on
         the stock environment. When performing each action, assume the agent can only sell/buy/hold one of the
