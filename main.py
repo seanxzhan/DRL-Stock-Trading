@@ -28,8 +28,8 @@ def train(train_data, model):
         with tf.GradientTape() as tape:
             states, actions, rewards = generate_episode(batch_input, model)
             discounted_rewards = discount(rewards)
-            model.buffer.append((states, actions, discounted_rewards))
-            repl_states, repl_actions, repl_discounted_rewards = model.experience_replay
+            model.remember(states, actions, discounted_rewards)
+            repl_states, repl_actions, repl_discounted_rewards = model.experience_replay()
             
             repl_states = tf.convert_to_tensor(repl_states)
             repl_actions = tf.convert_to_tensor(repl_actions)
