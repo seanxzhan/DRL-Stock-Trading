@@ -1,10 +1,12 @@
 def generate_episode(states, model):
     """
     generate an episode of experience based on the model's current policy and given states
-    stops generating when episode_length > num_states, or the agent is broke
+    stops generating when episode_length > num_states, or the agent is broke (check using model.capital)
+    since we are doing day trading, num_states = num_days (each day is a state)
     this assumes that the agent's actions have no impact on the stock environment.
+    reminder: a state is (open, high, low, close, adjusted close, volume)
 
-    :param states: a bunch of states, of size [num_states, state_size]
+    :param states: a bunch of states, of size [num_stocks, state_size, num_states]
     :param model: the RL agent, which contains a policy of which actions to take
 
     :return tuple of lists (states, actions, rewards), where each list is of episode_length.
