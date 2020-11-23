@@ -2,7 +2,8 @@ import numpy as np
 import tensorflow as tf
 from agent import PolicyGradientAgent
 from stock_env import *
-
+import matplotlib.pyplot as plt
+from stock_env import StockEnv
 
 def train(train_data, model):
     """
@@ -26,7 +27,8 @@ def train(train_data, model):
         end = start + batch_size
         batch_input = train_data[:, :, start:end]
         with tf.GradientTape() as tape:
-            states, actions, rewards = generate_episode(batch_input, model)
+            stockEnv = StockEnv()
+            states, actions, rewards = stockEnv.generate_episode(batch_input, model)
             discounted_rewards = discount(rewards)
             model.remember(states, actions, discounted_rewards)
             repl_states, repl_actions, repl_discounted_rewards = model.experience_replay()
@@ -37,7 +39,7 @@ def train(train_data, model):
             
             model_loss = model.loss(repl_states, repl_actions, repl_discounted_rewards)
         
-        gradients = tape.gradient(los, model.trainable_variables)
+        gradients = tape.gradient(model_loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
     pass
 
