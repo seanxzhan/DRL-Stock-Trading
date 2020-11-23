@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 from preprocess import get_data
 
-
 class StockEnv():
     def __init__(self,
                  is_testing=False,
