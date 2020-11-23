@@ -68,7 +68,7 @@ class StockEnv():
         num_stocks = model.num_stocks
 
         timestep = past_num  # we start on day number <past_num>
-        max_timestep = tf.shape(pricing_data)[1]
+        max_timestep = tf.shape(self.pricing_data)[1]
         portfolio_cash = [0] * (num_stocks + 1)  # cash value of each asset
         portfolio_cash[num_stocks] = self.initial_cash  # cash on hand
         portfolio_shares = [0] * num_stocks  # shares of each stock owned
