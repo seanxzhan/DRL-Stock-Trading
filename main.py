@@ -26,7 +26,8 @@ def train(train_data, model):
         end = start + batch_size
         batch_input = train_data[:, :, start:end]
         with tf.GradientTape() as tape:
-            states, actions, rewards = generate_episode(batch_input, model)
+            stockEnv = StockEnv()
+            states, actions, rewards = stockEnv.generate_episode(batch_input, model)
             discounted_rewards = discount(rewards)
             model.remember(states, actions, discounted_rewards)
             repl_states, repl_actions, repl_discounted_rewards = model.experience_replay()
