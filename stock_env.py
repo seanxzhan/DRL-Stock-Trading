@@ -46,9 +46,19 @@ class StockEnv():
 
         :param model: the RL agent, which contains a policy of which actions to take
 
-        :return tuple of lists (states, actions, rewards), where each list is of episode_length.
+        :return tuple of lists (states, actions, rewards), where each list is of episode_length. Note that
                 episode_length is not necessarily the same as num_states, because the agent might be broke and
-                terminate the episode early
+                terminate the episode early.
+
+                Each state is a tuple (<price_history>, <portfolio>) where price_history is of shape
+                (model.num_stocks, model.past_num, datum_size), and portfolio is of shape (model.num_stocks+1,)
+                where portfolio[model.num_stocks] = current cash on hand. Each element of portfolio in indices
+                0 to model.num_stocks-1 is the cash value invested in the corresponding asset.
+
+                Each action is of shape (model.num_stocks,) containing values of 0 (hold), 1 (buy), or 2 (sell),
+                corresponding to the action taken for a stock.
+
+                Each reward is a scalar representing the reward (i.e. total cash value of the portfolio).
         """
         states = []
         actions = []
