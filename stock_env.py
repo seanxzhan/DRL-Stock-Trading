@@ -8,6 +8,7 @@ class StockEnv():
                  initial_cash=1000,
                  buy_sell_amt=100,
                  exit_threshold=0,
+                 max_days=None,
                  inflation_annual=0.02,
                  interest_annual=0.03,
                  borrow_interest_annual=0.03,
@@ -21,6 +22,7 @@ class StockEnv():
             initial_cash (number)
             buy_sell_amt (number): cash amount to buy or sell
             exit_threshold (number): minimum total cash value of assets
+            max_days (number): maximum number of days to run
             inflation_annual (number): annual inflation rate
             interest_annual (number): annual interest rate
             borrow_interest_annual (number): annual stock loan fee
@@ -29,7 +31,8 @@ class StockEnv():
         days_per_year = 261  # number of trading days per year
         self.initial_cash = initial_cash
         self.buy_sell_amt = buy_sell_amt
-        self.exit_threshold = exit_threshold  # minimum total cash value of assets
+        self.exit_threshold = exit_threshold
+        self.max_days = max_days
         self.inflation = inflation_annual / days_per_year  # daily penalty on all assets
         self.interest = interest_annual / days_per_year  # daily penalty on borrowed cash
         self.borrow_interest = borrow_interest_annual / days_per_year  # daily penalty on borrowed stocks
@@ -68,7 +71,7 @@ class StockEnv():
         num_stocks = model.num_stocks
 
         timestep = past_num  # we start on day number <past_num>
-        max_timestep = tf.shape(self.pricing_data)[1]
+        timestep_stop = tf.shape(self.pricing_data)[1] + 1 if self.max_days is None else timestep + self.max_days
         portfolio_cash = [0] * (num_stocks + 1)  # cash value of each asset
         portfolio_cash[num_stocks] = self.initial_cash  # cash on hand
         portfolio_shares = [0] * num_stocks  # shares of each stock owned
@@ -76,7 +79,7 @@ class StockEnv():
 
         # ================ GENERATION ================
         while total_cash_value > self.exit_threshold:
-            if timestep > max_timestep:  # we've reached the end of pricing_data
+            if timestep >= timestep_stop:  # we've reached the end of pricing_data
                 break
 
             sliced_price_history = self.pricing_data[:, timestep -
@@ -147,6 +150,6 @@ def discount(rewards, discount_factor=.99):
     discounted = np.zeros((length, ))
     accum = 0
     for i in range(length):
-        accum = accum * discount_factor + rewards[i]
+        accum = accum * discount_factor + rewards[length - i - 1]
         discounted[length - i - 1] = accum
     return discounted
