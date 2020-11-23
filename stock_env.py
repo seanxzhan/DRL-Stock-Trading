@@ -89,14 +89,16 @@ class StockEnv():
                 subaction = np.random.choice(3, 1, p=probabilities[i])[0]
                 action.append(subaction)
                 if subaction == 1:  # buy
-                    portfolio_cash[num_stocks] -= 100
-                    portfolio_cash[i] += 100
-                    portfolio_shares[i] += 100 / closing_prices[i]
+                    portfolio_cash[num_stocks] -= self.buy_sell_amt
+                    portfolio_cash[i] += self.buy_sell_amt
+                    portfolio_shares[i] += (self.buy_sell_amt /
+                                            closing_prices[i])
                     transactions += 1
                 elif subaction == 2:  # sell
-                    portfolio_cash[num_stocks] += 100
-                    portfolio_cash[i] -= 100
-                    portfolio_shares[i] -= 100 / closing_prices[i]
+                    portfolio_cash[num_stocks] += self.buy_sell_amt
+                    portfolio_cash[i] -= self.buy_sell_amt
+                    portfolio_shares[i] -= (self.buy_sell_amt /
+                                            closing_prices[i])
                     transactions += 1
 
             # transaction fees
@@ -105,8 +107,8 @@ class StockEnv():
             # borrowing stocks
             for i in range(num_stocks):
                 if portfolio_cash[i] < 0:
-                    portfolio_cash[
-                        num_stocks] += portfolio_cash[i] * self.borrow_interest
+                    portfolio_cash[num_stocks] += (portfolio_cash[i] *
+                                                   self.borrow_interest)
             # borrowing cash
             if portfolio_cash[num_stocks] < 0:
                 portfolio_cash[num_stocks] *= 1 + self.interest
