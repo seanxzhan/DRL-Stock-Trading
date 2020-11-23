@@ -78,7 +78,7 @@ class StockEnv():
         total_cash_value = self.initial_cash
 
         # ================ GENERATION ================
-        while total_cash_value > exit_threshold:
+        while total_cash_value > self.exit_threshold:
             if timestep >= timestep_stop:  # we've reached the end of pricing_data
                 break
 
