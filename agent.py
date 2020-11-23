@@ -2,8 +2,6 @@ import numpy as np
 import tensorflow as tf
 import random
 
-
-
 class PolicyGradientAgent(tf.keras.Model):
     def __init__(self, state_size, num_stocks, past_num, resume=False):
         """
