@@ -140,6 +140,7 @@ class PolicyGradientAgent(tf.keras.Model):
         :param actions_taken: a batch of the sequence of actions that the agent actually took in the episode.(batch_sz,)
                                 Each action is of shape (model.num_stocks,) containing values of
                                 0 (hold), 1 (buy), or 2 (sell), corresponding to the action taken for a stock.
+                              if batch_sz==2 and num_stocks==3, example: [[2, 2, 1], [1, 0, 2]]
         :param discounted_reward: discounted rewards through the batch. (batch_sz, )
         :return a scalar loss of the whole batch
         """
@@ -147,12 +148,23 @@ class PolicyGradientAgent(tf.keras.Model):
         action_probs, states_summary = self.call(states)  # action_probs: (batch_sz, self.num_stock, 3)
         values = self.value(states_summary)  # (batch_sz, 1)
         values = tf.reshape(values, (-1))  # (batch_sz,)
-        probs_of_action_taken = tf.zeros((batch_sz,))
-        for b in range(batch_sz):
-            probs_of_action_taken[b] = tf.reduce_prod(
-                                        tf.gather_nd(action_probs[b],
-                                                     list(zip(np.arange(self.num_stocks), actions_taken[b]))))
-            # TODO: this could be very wrong...
+#         probs_of_action_taken = tf.zeros((batch_sz,))
+#         for b in range(batch_sz):
+#             probs_of_action_taken[b] = tf.reduce_prod(
+#                                         tf.gather_nd(action_probs[b],
+#                                                      list(zip(np.arange(self.num_stocks), actions_taken[b]))))
+#             # TODO: this could be very wrong...
+#         Above has error: 'tensorflow.python.framework.ops.EagerTensor' object does not support item assignment
+#         you could get around this with setattr, but not sure if it's gonna mess with backprop. anyways, below 
+#         might be a little more efficient (no for loop):
+        hot_tens = tf.one_hot(actions_taken, 3) # depth of 3, since we have 3 possible actions
+        # only desired indices will be multiplied by 1, others are multiplied by 0
+        filtered_tens = tf.multiply(action_probs, hot_tens) 
+        # add the last dimension to get rid of 0's from filtered_tens
+        probs_action_taken_each_stock = tf.keras.backend.sum(filtered_tens, axis=-1) # (batch_sz, num_stocks)
+        # assume each stock is independent
+        probs_of_action_taken = tf.reduce_prod(probs_action_taken_each_stock, axis=1)
+        
         advantage = discounted_reward - values  # (batch_sz,)
         actor_loss = - tf.reduce_sum(tf.math.multiply(tf.math.log(probs_of_action_taken), tf.stop_gradient(advantage)))
         critic_loss = tf.reduce_sum(tf.math.square(advantage))
