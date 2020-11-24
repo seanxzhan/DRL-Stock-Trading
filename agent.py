@@ -103,17 +103,18 @@ class PolicyGradientAgent(tf.keras.Model):
                 a tensor that summarize the states tensor of shape [batch_sz * self.actor_H2]
         """
         # extract info from states
-        price_history = [state[0] for state in states]  # [batch_sz, num_stocks, past_num, datum_size]
-        price_history = tf.reshape(price_history, (-1, self.num_stocks * self.past_num, self.datum_size))  # TODO: this seems wrong
-        portfolio = [state[1] for state in states]  # [batch_sz * (num_stock+1)]
+        price_history = [state[0] for state in states]  # (batch_sz, num_stocks, past_num, datum_size)
+        price_history = tf.transpose(price_history, perm=[0, 2, 1, 3])  # (batch_sz, past_num, num_stocks, datum_size)
+        price_history = tf.reshape(price_history, (-1, self.past_num, self.num_stocks * self.datum_size))  # (batch_sz, past_num, num_stocks * datum_size)
+        portfolio = [state[1] for state in states]  # (batch_sz, num_stock + 1)
         # pass through layers
-        gru_1_out_whole_seq, _ = self.actor_dropout_1(self.actor_gru_1(price_history))  # (batch_sz, num_stock * past_num , actor_H1)
-        gru_2_out = self.actor_dropout_2(self.actor_gru_2(gru_1_out_whole_seq))  # [batch_sz, actor_H2]
+        gru_1_out_whole_seq, _ = self.actor_dropout_1(self.actor_gru_1(price_history))  # (batch_sz, num_stocks * past_num, actor_H1)
+        gru_2_out = self.actor_dropout_2(self.actor_gru_2(gru_1_out_whole_seq))  # (batch_sz, actor_H2)
         past_and_current_info = tf.concat([gru_2_out, portfolio], axis=1)  # (batch_sz, actor_H2 + num_stock + 1)
         actor_out = self.actor_dense(past_and_current_info)  # (batch_sz * self.num_actions)
         # reshape the output and softmax
         actor_out = tf.reshape(actor_out, (-1, self.num_stocks, 3))
-        action_probs = tf.nn.softmax(actor_out, axis=-1)  # TODO: not sure if this sums the last dim to 1
+        action_probs = tf.nn.softmax(actor_out)  # softmaxes across last dimension only
         return action_probs, past_and_current_info
 
     def value(self, states_summary):
@@ -125,9 +126,9 @@ class PolicyGradientAgent(tf.keras.Model):
                                 output of the call function
         :return a tensor of size (batch_sz, 1) representing the value of each inputted states
         """
-        hidden_1 = self.critic_dense_1(states_summary)  # [batch_sz * self.critic_H1]
-        hidden_2 = self.critic_dense_2(hidden_1)  # [batch_sz * self.critic_H2]
-        value_out = self.critic_dense_3(hidden_2)  # [batch_sz * 1]
+        hidden_1 = self.critic_dense_1(states_summary)  # (batch_sz * self.critic_H1)
+        hidden_2 = self.critic_dense_2(hidden_1)  # (batch_sz * self.critic_H2)
+        value_out = self.critic_dense_3(hidden_2)  # (batch_sz * 1)
         return value_out
 
     def loss(self, states, actions_taken, discounted_reward):
