@@ -5,8 +5,7 @@ from preprocess import get_data
 
 class StockEnv():
     def __init__(self,
-                 data,
-                 #is_testing=False,
+                 is_testing=False,
                  initial_cash=1000,
                  buy_sell_amt=100,
                  exit_threshold=0,
@@ -40,8 +39,8 @@ class StockEnv():
         self.borrow_interest = borrow_interest_annual / days_per_year  # daily penalty on borrowed stocks
         self.transaction_penalty = transaction_penalty
 
-        #data = get_data()  # pricing data
-        self.pricing_data = data
+        data = get_data()  # pricing data
+        self.pricing_data = data[1] if is_testing else data[0]
 
     def generate_episode(self, model):
         """
@@ -86,19 +85,16 @@ class StockEnv():
 
             sliced_price_history = self.pricing_data[:, timestep -
                                                      past_num:timestep, :]
-            closing_prices = np.reshape(sliced_price_history[:, -1, 3],(-1,)) #Don't get this line
-
+            closing_prices = np.reshape(sliced_price_history[:, past_num, 3],
+                                        (-1, ))
 
             # recalculate portfolio_cash based on new prices
             portfolio_cash[:-1] = portfolio_shares * closing_prices
 
             action = []  # joint action across all stocks
             transactions = 0  # number of buys and sells
-            state = tuple((sliced_price_history, portfolio_cash))
-
-            #probabilities = model.call([state]).numpy()[0]  # batch_sz=1
-            probabilities = model.call([state])[0]  # batch_sz=1
-            probabilities = probabilities.numpy().reshape(num_stocks, 3)
+            state = (sliced_price_history, portfolio_cash)
+            probabilities = model.call([state]).numpy()[0]  # batch_sz=1
 
             # sample actions
             for i in range(num_stocks):
@@ -130,7 +126,7 @@ class StockEnv():
             if portfolio_cash[num_stocks] < 0:
                 portfolio_cash[num_stocks] *= 1 + self.interest
             # inflation
-            portfolio_cash = np.asarray(portfolio_cash)*(1 - self.inflation)
+            portfolio_cash *= 1 - self.inflation
             # recalculate total_cash_value
             total_cash_value = np.sum(portfolio_cash)
 
@@ -139,7 +135,7 @@ class StockEnv():
             rewards.append(total_cash_value)
             timestep += 1
 
-        return states, actions, rewards, portfolio_cash
+        return states, actions, rewards
 
 
 def discount(rewards, discount_factor=.99):

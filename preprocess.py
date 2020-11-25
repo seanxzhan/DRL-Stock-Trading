@@ -35,10 +35,7 @@ def get_data():
     train_data = daily_data[:, 0:cutoff, :]
     test_data = daily_data[:, cutoff:num_days, :]
     #TODO: necessary to save this data?
-
-    #all_tickers_cash = ["AAPL", "AMZN", "MSFT", "INTC", "REGN", "CASH"]
-    all_tickers.append("cash")
-    return train_data, test_data, all_tickers
+    return train_data, test_data
 
 get_data()
 
