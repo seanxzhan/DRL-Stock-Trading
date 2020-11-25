@@ -103,12 +103,24 @@ class PolicyGradientAgent(tf.keras.Model):
                 a tensor that summarize the states tensor of shape [batch_sz * self.actor_H2]
         """
         # extract info from states
+        state = states[0]
+        print("call")
+        print(state[0].shape)
+        print(state[1])
+
         price_history = [state[0] for state in states]  # (batch_sz, num_stocks, past_num, datum_size)
         price_history = tf.transpose(price_history, perm=[0, 2, 1, 3])  # (batch_sz, past_num, num_stocks, datum_size)
         price_history = tf.reshape(price_history, (-1, self.past_num, self.num_stocks * self.datum_size))  # (batch_sz, past_num, num_stocks * datum_size)
         portfolio = [state[1] for state in states]  # (batch_sz, num_stock + 1)
         # pass through layers
-        gru_1_out_whole_seq, _ = self.actor_dropout_1(self.actor_gru_1(price_history))  # (batch_sz, num_stocks * past_num, actor_H1)
+        print("layers")
+        print(type(price_history))
+        print(price_history.shape)
+        print(portfolio)
+
+        #gru_1_out_whole_seq, _ = self.actor_dropout_1(self.actor_gru_1(price_history))  # (batch_sz, num_stocks * past_num, actor_H1)
+        gru_1_out_whole_seq, _ = self.actor_gru_1(price_history)  # (batch_sz, num_stocks * past_num, actor_H1)
+        gru_1_out_whole_seq = self.actor_dropout_1(gru_1_out_whole_seq)
         gru_2_out = self.actor_dropout_2(self.actor_gru_2(gru_1_out_whole_seq))  # (batch_sz, actor_H2)
         past_and_current_info = tf.concat([gru_2_out, portfolio], axis=1)  # (batch_sz, actor_H2 + num_stock + 1)
         actor_out = self.actor_dense(past_and_current_info)  # (batch_sz * self.num_actions)

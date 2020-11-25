@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="933b221d-3415-4d25-9fef-dd74438625eb" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/visual_helpers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stock_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/stock_env.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IgnoredFileRootStore">
+    <option name="generatedRoots">
+      <set>
+        <option value="C:\Users\andre\Desktop\CS1470\DRL-Stock-Trading\.idea" />
+      </set>
+    </option>
+  </component>
+  <component name="ProjectId" id="1kgA8oMgW6yjlWQDCBb60u0OjPP" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RunManager" selected="Python.main">
+    <configuration name="agent" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="DRL-Stock-Trading" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/agent.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="experiment" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="DRL-Stock-Trading" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/experiment.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="DRL-Stock-Trading" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="stock_env" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="DRL-Stock-Trading" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/stock_env.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="visual_helpers (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="DRL-Stock-Trading" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/visual_helpers.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.main" />
+        <item itemvalue="Python.experiment" />
+        <item itemvalue="Python.stock_env" />
+        <item itemvalue="Python.agent" />
+        <item itemvalue="Python.visual_helpers (1)" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="933b221d-3415-4d25-9fef-dd74438625eb" name="Default Changelist" comment="" />
+      <created>1606111704084</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1606111704084</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="371" y="0" key="#agent" timestamp="1606163834812">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="371" y="0" key="#agent/0.0.1280.680@0.0.1280.680" timestamp="1606163834812" />
+    <state x="94" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1606163771979">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="94" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1280.680@0.0.1280.680" timestamp="1606163771979" />
+    <state x="371" y="0" key="#experiment" timestamp="1606163860079">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="371" y="0" key="#experiment/0.0.1280.680@0.0.1280.680" timestamp="1606163860079" />
+    <state x="419" y="95" key="FileChooserDialogImpl" timestamp="1606271763463">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="419" y="95" key="FileChooserDialogImpl/0.0.1280.680@0.0.1280.680" timestamp="1606271763463" />
+    <state width="1259" height="198" key="GridCell.Tab.0.bottom" timestamp="1606338448853">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1259" height="198" key="GridCell.Tab.0.bottom/0.0.1280.680@0.0.1280.680" timestamp="1606338448853" />
+    <state width="1259" height="198" key="GridCell.Tab.0.center" timestamp="1606338448853">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1259" height="198" key="GridCell.Tab.0.center/0.0.1280.680@0.0.1280.680" timestamp="1606338448853" />
+    <state width="1259" height="198" key="GridCell.Tab.0.left" timestamp="1606338448853">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1259" height="198" key="GridCell.Tab.0.left/0.0.1280.680@0.0.1280.680" timestamp="1606338448853" />
+    <state width="1259" height="198" key="GridCell.Tab.0.right" timestamp="1606338448853">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1259" height="198" key="GridCell.Tab.0.right/0.0.1280.680@0.0.1280.680" timestamp="1606338448853" />
+    <state width="1259" height="228" key="GridCell.Tab.1.bottom" timestamp="1606327760364">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1259" height="228" key="GridCell.Tab.1.bottom/0.0.1280.680@0.0.1280.680" timestamp="1606327760364" />
+    <state width="1259" height="228" key="GridCell.Tab.1.center" timestamp="1606327760364">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1259" height="228" key="GridCell.Tab.1.center/0.0.1280.680@0.0.1280.680" timestamp="1606327760364" />
+    <state width="1259" height="228" key="GridCell.Tab.1.left" timestamp="1606327760364">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1259" height="228" key="GridCell.Tab.1.left/0.0.1280.680@0.0.1280.680" timestamp="1606327760364" />
+    <state width="1259" height="228" key="GridCell.Tab.1.right" timestamp="1606327760364">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1259" height="228" key="GridCell.Tab.1.right/0.0.1280.680@0.0.1280.680" timestamp="1606327760364" />
+    <state x="352" y="56" key="MultipleFileMergeDialog" timestamp="1606321124867">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="352" y="56" key="MultipleFileMergeDialog/0.0.1280.680@0.0.1280.680" timestamp="1606321124867" />
+    <state x="141" y="0" key="SettingsEditor" timestamp="1606271854299">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="141" y="0" key="SettingsEditor/0.0.1280.680@0.0.1280.680" timestamp="1606271854299" />
+    <state x="336" y="164" key="com.intellij.ide.util.TipDialog" timestamp="1606320973871">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="336" y="164" key="com.intellij.ide.util.TipDialog/0.0.1280.680@0.0.1280.680" timestamp="1606320973871" />
+    <state x="421" y="53" key="git4idea.branch.GitSmartOperationDialog" timestamp="1606320994846">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="421" y="53" key="git4idea.branch.GitSmartOperationDialog/0.0.1280.680@0.0.1280.680" timestamp="1606320994846" />
+  </component>
+</project>
