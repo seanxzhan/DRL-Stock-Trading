@@ -1,16 +1,16 @@
 import tensorflow as tf
 import numpy as np
 from preprocess import get_data
-
+from random import randint
 
 class StockEnv():
     def __init__(self,
                  data,
-                 #is_testing=False,
+                 is_testing=False,
                  initial_cash=1000,
                  buy_sell_amt=100,
                  exit_threshold=0,
-                 max_days=None,
+                 max_days= 100,
                  inflation_annual=0.02,
                  interest_annual=0.03,
                  borrow_interest_annual=0.03,
@@ -72,8 +72,10 @@ class StockEnv():
         past_num = model.past_num
         num_stocks = model.num_stocks
 
-        timestep = past_num  # we start on day number <past_num>
-        timestep_stop = tf.shape(self.pricing_data)[1] + 1 if self.max_days is None else timestep + self.max_days
+        initial_timestep = past_num
+        timestep = initial_timestep
+
+        timestep_stop = tf.shape(self.pricing_data)[1] + 1 # if self.max_days is None else timestep + self.max_days
         portfolio_cash = [0] * (num_stocks + 1)  # cash value of each asset
         portfolio_cash[num_stocks] = self.initial_cash  # cash on hand
         portfolio_shares = [0] * num_stocks  # shares of each stock owned
@@ -85,9 +87,8 @@ class StockEnv():
                 break
 
             sliced_price_history = self.pricing_data[:, timestep -
-                                                     past_num:timestep, :]
-            closing_prices = np.reshape(sliced_price_history[:, -1, 3],(-1,)) #Don't get this line
-
+                                                     initial_timestep:timestep, :]
+            closing_prices = np.reshape(sliced_price_history[:, -1, 3],(-1,))
 
             # recalculate portfolio_cash based on new prices
             portfolio_cash[:-1] = portfolio_shares * closing_prices
@@ -96,7 +97,6 @@ class StockEnv():
             transactions = 0  # number of buys and sells
             state = tuple((sliced_price_history, portfolio_cash))
 
-            #probabilities = model.call([state]).numpy()[0]  # batch_sz=1
             probabilities = model.call([state])[0]  # batch_sz=1
             probabilities = probabilities.numpy().reshape(num_stocks, 3)
 
@@ -139,6 +139,7 @@ class StockEnv():
             rewards.append(total_cash_value)
             timestep += 1
 
+        print(portfolio_shares)
         return states, actions, rewards, portfolio_cash
 
 

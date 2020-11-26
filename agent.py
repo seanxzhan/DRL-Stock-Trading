@@ -41,7 +41,7 @@ class PolicyGradientAgent(tf.keras.Model):
         # RL agent params
         self.datum_size = datum_size
         self.num_stocks = num_stocks
-        self.batch_size = 50
+        self.batch_size = 100
         self.buffer = []  # initialize the memory replay buffer
         self.buffer_size = 100  # maximum episodes the buffer can hold
         self.buffer_num_elt = 0  # the number of current elements in the buffer
@@ -104,19 +104,16 @@ class PolicyGradientAgent(tf.keras.Model):
         """
         # extract info from states
         state = states[0]
-        print("call")
-        print(state[0].shape)
-        print(state[1])
 
         price_history = [state[0] for state in states]  # (batch_sz, num_stocks, past_num, datum_size)
         price_history = tf.transpose(price_history, perm=[0, 2, 1, 3])  # (batch_sz, past_num, num_stocks, datum_size)
         price_history = tf.reshape(price_history, (-1, self.past_num, self.num_stocks * self.datum_size))  # (batch_sz, past_num, num_stocks * datum_size)
         portfolio = [state[1] for state in states]  # (batch_sz, num_stock + 1)
         # pass through layers
-        print("layers")
-        print(type(price_history))
-        print(price_history.shape)
-        print(portfolio)
+        # print("layers")
+        # print(type(price_history))
+        # print(price_history.shape)
+        # print(portfolio)
 
         #gru_1_out_whole_seq, _ = self.actor_dropout_1(self.actor_gru_1(price_history))  # (batch_sz, num_stocks * past_num, actor_H1)
         gru_1_out_whole_seq, _ = self.actor_gru_1(price_history)  # (batch_sz, num_stocks * past_num, actor_H1)

@@ -61,13 +61,13 @@ def test(test_data, model, tickers):
     total_rewards = []
 
     batches = int(num_days / batch_size)
-    portfolio_across_batches = np.zeros((model.num_stocks + 1, int(batches / 10)))
+    portfolio_across_batches = np.zeros((model.num_stocks + 1, int(batches / 10) + 1))
     for batch in range(0, batches):
-        print("Training batch #{}".format(batch))
+        print("Testing batch #{}".format(batch))
         start = batch * batch_size
         end = start + batch_size
         batch_input = test_data[:, start:end, :]
-        env = StockEnv(batch_input)
+        env = StockEnv(test_data)
         states, actions, rewards, portfolio_cash = env.generate_episode(model)
         total_rewards.append(rewards[-1]) #reward at end of batch
 
@@ -82,7 +82,7 @@ def main():
     """
     where everything comes together
     """
-    NUM_EPOCH = None
+    NUM_EPOCH = 10
     # TODO: parse cmd line arguments if needed
     # TODO: import preprocessed data from file in the current directory
     # TODO: decide if train from beginning, or load a previously trained model
@@ -96,7 +96,12 @@ def main():
 
     model = PolicyGradientAgent(datum_size, num_stocks, past_num)
 
-    train(train_data, model)
+    for i in range(NUM_EPOCH):
+        print(f'EPOCH: --------------------------------{i}')
+        start_day = randint(0, len(train_data))
+        sample = train_data[:,start_day:, :]
+        train(train_data, model)
+
     test(test_data, model, tickers)
     print("END")
 
