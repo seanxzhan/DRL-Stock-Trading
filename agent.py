@@ -52,9 +52,11 @@ class PolicyGradientAgent(tf.keras.Model):
         self.actor_H2 = 24
         self.critic_H1 = 64
         self.critic_H2 = 16
-        self.lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=[30, 110, 220, 300],
-                                                                                values=[0.01, 0.005, 0.003, 0.002,
-                                                                                        0.001])
+        # self.lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=[30, 110, 220, 300],
+        #                                                                         values=[0.01, 0.005, 0.003, 0.002,
+        #                                                                                 0.001])
+        self.lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(initial_learning_rate=0.001,
+                                                                          decay_rate=0.98, decay_steps=100000)
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
 
         # model layers
@@ -108,7 +110,8 @@ class PolicyGradientAgent(tf.keras.Model):
         price_history = tf.reshape(price_history, (-1, self.past_num, self.num_stocks * self.datum_size))  # (batch_sz, past_num, num_stocks * datum_size)
         portfolio = [state[1] for state in states]  # (batch_sz, num_stock + 1)
         # pass through layers
-        gru_1_out_whole_seq, _ = self.actor_dropout_1(self.actor_gru_1(price_history))  # (batch_sz, num_stocks * past_num, actor_H1)
+        gru_1_out_whole_seq, _ = self.actor_gru_1(price_history)  # (batch_sz, past_num, actor_H1)
+        gru_1_out_whole_seq = self.actor_dropout_1(gru_1_out_whole_seq)
         gru_2_out = self.actor_dropout_2(self.actor_gru_2(gru_1_out_whole_seq))  # (batch_sz, actor_H2)
         past_and_current_info = tf.concat([gru_2_out, portfolio], axis=1)  # (batch_sz, actor_H2 + num_stock + 1)
         actor_out = self.actor_dense(past_and_current_info)  # (batch_sz * self.num_actions)
@@ -149,16 +152,7 @@ class PolicyGradientAgent(tf.keras.Model):
         action_probs, states_summary = self.call(states)  # action_probs: (batch_sz, self.num_stock, 3)
         values = self.value(states_summary)  # (batch_sz, 1)
         values = tf.reshape(values, (-1))  # (batch_sz,)
-#         probs_of_action_taken = tf.zeros((batch_sz,))
-#         for b in range(batch_sz):
-#             probs_of_action_taken[b] = tf.reduce_prod(
-#                                         tf.gather_nd(action_probs[b],
-#                                                      list(zip(np.arange(self.num_stocks), actions_taken[b]))))
-#             # TODO: this could be very wrong...
-#         Above has error: 'tensorflow.python.framework.ops.EagerTensor' object does not support item assignment
-#         you could get around this with setattr, but not sure if it's gonna mess with backprop. anyways, below 
-#         might be a little more efficient (no for loop):
-        hot_tens = tf.one_hot(actions_taken, 3) # depth of 3, since we have 3 possible actions
+        hot_tens = tf.one_hot(actions_taken, 3)  # depth of 3, since we have 3 possible actions
         # only desired indices will be multiplied by 1, others are multiplied by 0
         filtered_tens = tf.multiply(action_probs, hot_tens) 
         # add the last dimension to get rid of 0's from filtered_tens
@@ -197,9 +191,14 @@ class PolicyGradientAgent(tf.keras.Model):
         put an entire episode of states, actions, rewards into the memory-replay buffer
         call this function right after an entire episode of (s,a,r) is generated to remember the episode
 
-        :param states: the sequence of states in an episode. [episode_len]
-        :param actions: the sequence of actions in an episode. [episode_len]
-        :param discounted_rewards: the sequence of rewards received in an episode. [episode_len]
+        :param states: an episode_len of state tuples (self.batch_sz, ), where each tuple is
+                        (<price_history>, <portfolio>), where price_history is of shape
+                        (model.num_stocks, model.past_num, datum_size), and portfolio is of shape (model.num_stocks+1,)
+        :param actions: an episode_len of the sequence of actions that the agent actually took in the episode.
+                        (episode_len, self.num_stocks)
+                        Each action is of shape (model.num_stocks,) containing values of 0 (hold), 1 (buy), or 2 (sell),
+                        corresponding to the action taken for a stock.
+        :param discounted_rewards: the sequence of rewards received in an episode. (episode_len, )
         :return Nothing
         """
         if self.buffer_num_elt >= self.buffer_size:
