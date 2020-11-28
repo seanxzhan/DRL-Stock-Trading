@@ -41,7 +41,7 @@ class PolicyGradientAgent(tf.keras.Model):
         # RL agent params
         self.datum_size = datum_size
         self.num_stocks = num_stocks
-        self.batch_size = 50
+        self.batch_size = 200
         self.buffer = []  # initialize the memory replay buffer
         self.buffer_size = 100  # maximum episodes the buffer can hold
         self.buffer_num_elt = 0  # the number of current elements in the buffer

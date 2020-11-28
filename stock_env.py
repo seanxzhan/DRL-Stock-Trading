@@ -1,15 +1,17 @@
 import tensorflow as tf
 import numpy as np
 from preprocess import get_data
-
+from random import randint
+from visual_helpers import visualize_portfolio, visualize_linegraph
 
 class StockEnv():
     def __init__(self,
+                 data,
                  is_testing=False,
                  initial_cash=1000,
                  buy_sell_amt=100,
                  exit_threshold=0,
-                 max_days=None,
+                 max_days= 100,
                  inflation_annual=0.02,
                  interest_annual=0.03,
                  borrow_interest_annual=0.03,
@@ -19,6 +21,7 @@ class StockEnv():
         and borrowing. It ensures that the episode will exit when total cash value of assets < exit_threshold.
 
         Args:
+            data [num_stocks, num_days, state_size]: price data
             is_testing (boolean)
             initial_cash (number)
             buy_sell_amt (number): cash amount to buy or sell
@@ -29,6 +32,7 @@ class StockEnv():
             borrow_interest_annual (number): annual stock loan fee
             transaction_penalty (number): transaction fee percentage
         """
+        self.is_testing = is_testing
         days_per_year = 261  # number of trading days per year
         self.initial_cash = initial_cash
         self.buy_sell_amt = buy_sell_amt
@@ -39,8 +43,8 @@ class StockEnv():
         self.borrow_interest = borrow_interest_annual / days_per_year  # daily penalty on borrowed stocks
         self.transaction_penalty = transaction_penalty
 
-        data = get_data()  # pricing data
-        self.pricing_data = data[1] if is_testing else data[0]
+        #data = get_data()  # pricing data
+        self.pricing_data = data
 
     def generate_episode(self, model):
         """
@@ -71,34 +75,47 @@ class StockEnv():
         past_num = model.past_num
         num_stocks = model.num_stocks
 
-        timestep = past_num  # we start on day number <past_num>
-        timestep_stop = tf.shape(self.pricing_data)[1] + 1 if self.max_days is None else timestep + self.max_days
+        initial_timestep = past_num
+        timestep = initial_timestep
+
+        timestep_stop = tf.shape(self.pricing_data)[1] + 1 # if self.max_days is None else timestep + self.max_days
         portfolio_cash = [0] * (num_stocks + 1)  # cash value of each asset
         portfolio_cash[num_stocks] = self.initial_cash  # cash on hand
         portfolio_shares = [0] * num_stocks  # shares of each stock owned
+        portfolio_shares = np.asarray(portfolio_shares)
         total_cash_value = self.initial_cash
 
+        portfolio_cash_entire = np.zeros((num_stocks + 1, 1))
+
+        first_step = True #boolean variable used to create array for visualization
         # ================ GENERATION ================
         while total_cash_value > self.exit_threshold:
             if timestep >= timestep_stop:  # we've reached the end of pricing_data
                 break
 
             sliced_price_history = self.pricing_data[:, timestep -
-                                                     past_num:timestep, :]
-            closing_prices = np.reshape(sliced_price_history[:, past_num, 3],
-                                        (-1, ))
+                                                     initial_timestep:timestep, :]
+            closing_prices = np.reshape(sliced_price_history[:, -1, 3],(-1,))
 
             # recalculate portfolio_cash based on new prices
             portfolio_cash[:-1] = portfolio_shares * closing_prices
 
             action = []  # joint action across all stocks
             transactions = 0  # number of buys and sells
-            state = (sliced_price_history, portfolio_cash)
-            probabilities = model.call([state]).numpy()[0]  # batch_sz=1
+            state = tuple((sliced_price_history, portfolio_cash))
+
+            probabilities = model.call([state])[0]  # batch_sz=1
+            probabilities = probabilities.numpy().reshape(num_stocks, 3)
 
             # sample actions
             for i in range(num_stocks):
                 # 0=hold 1=buy 2=sell
+                if np.isnan(probabilities[i][0]): #TODO: fix agent outputting nan probabilities
+                    print("nan")
+                    probabilities[i] = [1/3, 1/3, 1/3]
+                # if self.is_testing:
+                #     subaction = np.argmax(probabilities[i])
+                # else:
                 subaction = np.random.choice(3, 1, p=probabilities[i])[0]
                 action.append(subaction)
                 if subaction == 1:  # buy
@@ -126,7 +143,7 @@ class StockEnv():
             if portfolio_cash[num_stocks] < 0:
                 portfolio_cash[num_stocks] *= 1 + self.interest
             # inflation
-            portfolio_cash *= 1 - self.inflation
+            portfolio_cash = np.asarray(portfolio_cash)*(1 - self.inflation)
             # recalculate total_cash_value
             total_cash_value = np.sum(portfolio_cash)
 
@@ -135,8 +152,21 @@ class StockEnv():
             rewards.append(total_cash_value)
             timestep += 1
 
-        return states, actions, rewards
+            #portfolio_cash_entire (num_stocks + 1, n): portfolio_cash across n time steps
+            if first_step == True:
+                portfolio_cash_entire[:, 0] = portfolio_cash
+                first_step = False
+            else:
+                portfolio_cash_entire = np.hstack((portfolio_cash_entire, portfolio_cash.reshape((-1, 1))))
 
+        if self.is_testing:
+            print(portfolio_cash_entire)
+            tickers = ["AAPL", "AMZN", "MSFT", "INTC", "REGN", "CASH"]
+            visualize_stride = int(portfolio_cash_entire.shape[1] / 10)
+            visualize_portfolio(portfolio_cash_entire[:, ::visualize_stride], tickers)
+            visualize_linegraph(rewards)
+
+        return states, actions, rewards
 
 def discount(rewards, discount_factor=.99):
     """
