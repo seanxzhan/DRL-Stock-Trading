@@ -41,7 +41,7 @@ class PolicyGradientAgent(tf.keras.Model):
         # RL agent params
         self.datum_size = datum_size
         self.num_stocks = num_stocks
-        self.batch_size = 100
+        self.batch_size = 200
         self.buffer = []  # initialize the memory replay buffer
         self.buffer_size = 100  # maximum episodes the buffer can hold
         self.buffer_num_elt = 0  # the number of current elements in the buffer
@@ -103,8 +103,6 @@ class PolicyGradientAgent(tf.keras.Model):
                 a tensor that summarize the states tensor of shape [batch_sz * self.actor_H2]
         """
         # extract info from states
-        state = states[0]
-
         price_history = [state[0] for state in states]  # (batch_sz, num_stocks, past_num, datum_size)
         price_history = tf.transpose(price_history, perm=[0, 2, 1, 3])  # (batch_sz, past_num, num_stocks, datum_size)
         price_history = tf.reshape(price_history, (-1, self.past_num, self.num_stocks * self.datum_size))  # (batch_sz, past_num, num_stocks * datum_size)

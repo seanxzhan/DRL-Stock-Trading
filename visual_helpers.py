@@ -3,7 +3,6 @@ import pandas as pd
 from stock_env import *
 from preprocess import get_data
 import matplotlib.pyplot as plt
-from main import *
 import datetime
 
 def bad_visualization():

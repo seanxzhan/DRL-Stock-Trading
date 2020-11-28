@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from preprocess import get_data
 from random import randint
+from visual_helpers import visualize_portfolio, visualize_linegraph
 
 class StockEnv():
     def __init__(self,
@@ -20,6 +21,7 @@ class StockEnv():
         and borrowing. It ensures that the episode will exit when total cash value of assets < exit_threshold.
 
         Args:
+            data [num_stocks, num_days, state_size]: price data
             is_testing (boolean)
             initial_cash (number)
             buy_sell_amt (number): cash amount to buy or sell
@@ -30,6 +32,7 @@ class StockEnv():
             borrow_interest_annual (number): annual stock loan fee
             transaction_penalty (number): transaction fee percentage
         """
+        self.is_testing = is_testing
         days_per_year = 261  # number of trading days per year
         self.initial_cash = initial_cash
         self.buy_sell_amt = buy_sell_amt
@@ -79,8 +82,12 @@ class StockEnv():
         portfolio_cash = [0] * (num_stocks + 1)  # cash value of each asset
         portfolio_cash[num_stocks] = self.initial_cash  # cash on hand
         portfolio_shares = [0] * num_stocks  # shares of each stock owned
+        portfolio_shares = np.asarray(portfolio_shares)
         total_cash_value = self.initial_cash
 
+        portfolio_cash_entire = np.zeros((num_stocks + 1, 1))
+
+        first_step = True #boolean variable used to create array for visualization
         # ================ GENERATION ================
         while total_cash_value > self.exit_threshold:
             if timestep >= timestep_stop:  # we've reached the end of pricing_data
@@ -103,6 +110,12 @@ class StockEnv():
             # sample actions
             for i in range(num_stocks):
                 # 0=hold 1=buy 2=sell
+                if np.isnan(probabilities[i][0]): #TODO: fix agent outputting nan probabilities
+                    print("nan")
+                    probabilities[i] = [1/3, 1/3, 1/3]
+                # if self.is_testing:
+                #     subaction = np.argmax(probabilities[i])
+                # else:
                 subaction = np.random.choice(3, 1, p=probabilities[i])[0]
                 action.append(subaction)
                 if subaction == 1:  # buy
@@ -139,9 +152,21 @@ class StockEnv():
             rewards.append(total_cash_value)
             timestep += 1
 
-        print(portfolio_shares)
-        return states, actions, rewards, portfolio_cash
+            #portfolio_cash_entire (num_stocks + 1, n): portfolio_cash across n time steps
+            if first_step == True:
+                portfolio_cash_entire[:, 0] = portfolio_cash
+                first_step = False
+            else:
+                portfolio_cash_entire = np.hstack((portfolio_cash_entire, portfolio_cash.reshape((-1, 1))))
 
+        if self.is_testing:
+            print(portfolio_cash_entire)
+            tickers = ["AAPL", "AMZN", "MSFT", "INTC", "REGN", "CASH"]
+            visualize_stride = int(portfolio_cash_entire.shape[1] / 10)
+            visualize_portfolio(portfolio_cash_entire[:, ::visualize_stride], tickers)
+            visualize_linegraph(rewards)
+
+        return states, actions, rewards
 
 def discount(rewards, discount_factor=.99):
     """
