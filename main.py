@@ -32,12 +32,11 @@ def train(train_data, model):
             states, actions, rewards = env.generate_episode(model)
             discounted_rewards = discount(rewards)
             model.remember(states, actions, discounted_rewards)
-            # repl_states, repl_actions, repl_discounted_rewards = model.experience_replay()
-            repl_states, repl_actions, repl_discounted_rewards = states, actions, discounted_rewards
-            # TODO: remove this after experience replay is finished
-            # repl_states = tf.convert_to_tensor(repl_states)
-            # repl_actions = tf.convert_to_tensor(repl_actions)
-            # repl_discounted_rewards = tf.convert_to_tensor(repl_discounted_rewards)
+            repl_states, repl_actions, repl_discounted_rewards = model.experience_replay()
+            repl_states = tf.convert_to_tensor(repl_states)
+            repl_actions = tf.convert_to_tensor(repl_actions)
+            repl_discounted_rewards = tf.convert_to_tensor(repl_discounted_rewards)
+            #repl_states, repl_actions, repl_discounted_rewards = states, actions, discounted_rewards
             
             model_loss = model.loss(repl_states, repl_actions, repl_discounted_rewards)
 
