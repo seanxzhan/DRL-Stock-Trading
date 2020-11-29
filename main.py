@@ -23,7 +23,7 @@ def train(train_data, model):
     # TODO: 4) compute the loss, run back prop on the model
     loss = []
     for batch in range(0, int(num_days / batch_size)):
-        print("Training batch #{}".format(batch))
+        if batch % 10 == 0: print("Training batch #{}".format(batch))
         start = batch * batch_size
         end = start + batch_size
         batch_input = train_data[:, start:end, :]
@@ -33,17 +33,12 @@ def train(train_data, model):
             discounted_rewards = discount(rewards)
             model.remember(states, actions, discounted_rewards)
             repl_states, repl_actions, repl_discounted_rewards = model.experience_replay()
-            repl_states = tf.convert_to_tensor(repl_states)
-            repl_actions = tf.convert_to_tensor(repl_actions)
-            repl_discounted_rewards = tf.convert_to_tensor(repl_discounted_rewards)
-            #repl_states, repl_actions, repl_discounted_rewards = states, actions, discounted_rewards
             
             model_loss = model.loss(repl_states, repl_actions, repl_discounted_rewards)
 
         gradients = tape.gradient(model_loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-        loss.append(rewards[-1]) #reward at end of batch
-    visualize_linegraph(loss)
+        loss.append(rewards)  # reward at end of batch
     pass
 
 
@@ -64,11 +59,12 @@ def test(test_data, model, tickers):
 
     print(f'final cash: {rewards[-1]}')
 
+
 def main():
     """
     probabilities = NaN error occurs occasionally.
     """
-    NUM_EPOCH = 1
+    NUM_EPOCH = 10
     # TODO: parse cmd line arguments if needed
     # TODO: import preprocessed data from file in the current directory
     # TODO: decide if train from beginning, or load a previously trained model
@@ -76,7 +72,7 @@ def main():
     # TODO: train
     # TODO: test
 
-    train_data, test_data, tickers = get_data()
+    train_data, test_data, tickers = get_data()  # data: (num_stock, num_days, datum_size)
     num_stocks, num_days, datum_size = test_data.shape
     past_num = 50
 
@@ -84,12 +80,13 @@ def main():
 
     for i in range(NUM_EPOCH):
         print(f'EPOCH: --------------------------------{i}')
-        start_day = randint(0, train_data.shape[1] - model.past_num - model.batch_size)
-        sample = train_data[:,start_day:, :]
-        train(train_data, model)  #change to sample for random initial time step
+        start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
+        sample = train_data[:, start_day:, :]
+        train(sample, model)  # change to sample for random initial time step
 
     test(test_data, model, tickers)
     print("END")
+
 
 if __name__ == '__main__':
     main()

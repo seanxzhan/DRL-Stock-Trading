@@ -1,6 +1,7 @@
 import yfinance as yf
 import tensorflow as tf
 
+
 def get_data():
     """
     Import data from yfinance and split data into training set and testing set
