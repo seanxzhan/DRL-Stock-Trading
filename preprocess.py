@@ -10,6 +10,11 @@ def get_data():
               Each tensor has dimension [num_stocks, num_days, state_size]
     """
     all_tickers = ["AAPL", "AMZN", "MSFT", "INTC", "REGN"]
+    # all_tickers.append("ADBE")
+    # all_tickers.append("DIS")
+    # all_tickers.append("JNJ")
+    # all_tickers.append("HON")
+    # all_tickers.append("PFE")
     str_tickers = ' '.join(all_tickers)
     num_stocks = len(all_tickers)    
     state_size = 5      # open, high, low, adjusted close, volume

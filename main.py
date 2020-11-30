@@ -5,7 +5,7 @@ from stock_env import *
 from visual_helpers import visualize_linegraph, visualize_portfolio
 
 
-def train(train_data, model):
+def train(train_data, model, past_num):
     """
     the train function, train the model for an entire epoch
 
@@ -27,6 +27,12 @@ def train(train_data, model):
         start = batch * batch_size
         end = start + batch_size
         batch_input = train_data[:, start:end, :]
+
+        # randomize starting date, keep at least one chunk of num_days left
+        offset = 2 * past_num
+        rand_start = randint(0, batch_size - past_num - offset)
+        batch_input = batch_input[:, rand_start:batch_size,:]
+
         env = StockEnv(batch_input)
         with tf.GradientTape() as tape:
             states, actions, rewards = env.generate_episode(model)
@@ -35,6 +41,7 @@ def train(train_data, model):
             repl_states, repl_actions, repl_discounted_rewards = model.experience_replay()
             
             model_loss = model.loss(repl_states, repl_actions, repl_discounted_rewards)
+            print("Loss: {}".format(model_loss))
 
         gradients = tape.gradient(model_loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -64,7 +71,7 @@ def main():
     """
     probabilities = NaN error occurs occasionally.
     """
-    NUM_EPOCH = 10
+    NUM_EPOCH = 5
     # TODO: parse cmd line arguments if needed
     # TODO: import preprocessed data from file in the current directory
     # TODO: decide if train from beginning, or load a previously trained model
@@ -74,15 +81,16 @@ def main():
 
     train_data, test_data, tickers = get_data()  # data: (num_stock, num_days, datum_size)
     num_stocks, num_days, datum_size = test_data.shape
-    past_num = 50
+    past_num = 30
 
     model = PolicyGradientAgent(datum_size, num_stocks, past_num)
 
     for i in range(NUM_EPOCH):
         print(f'EPOCH: --------------------------------{i}')
-        start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
-        sample = train_data[:, start_day:, :]
-        train(sample, model)  # change to sample for random initial time step
+        # start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
+        # sample = train_data[:, start_day:, :]
+        # train(sample, model)  # change to sample for random initial time step
+        train(train_data, model, past_num)  # change to sample for random initial time step
 
     test(test_data, model, tickers)
     print("END")

@@ -106,6 +106,7 @@ class StockEnv():
 
             probabilities = model.call([state])[0]  # batch_sz=1
             probabilities = probabilities.numpy().reshape(num_stocks, 3)
+            # print(probabilities)
 
             # sample actions
             for i in range(num_stocks):
@@ -117,6 +118,8 @@ class StockEnv():
                 #     subaction = np.argmax(probabilities[i])
                 # else:
                 subaction = np.random.choice(3, 1, p=probabilities[i])[0]
+                # print("probabilities for stock: {}".format(probabilities[i]))
+                # print("subaction selected: {}".format(subaction))
                 action.append(subaction)
                 if subaction == 1:  # buy
                     portfolio_cash[num_stocks] -= self.buy_sell_amt
