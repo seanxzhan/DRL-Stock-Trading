@@ -7,6 +7,7 @@ from visual_helpers import visualize_portfolio, visualize_linegraph
 class StockEnv():
     def __init__(self,
                  data,
+                 all_tickers,
                  is_testing=False,
                  initial_cash=1000,
                  buy_sell_amt=100,
@@ -22,6 +23,7 @@ class StockEnv():
 
         Args:
             data [num_stocks, num_days, state_size]: price data
+            all_tickers (num_stocks + 1, ): all reprocessed stocks, including cash
             is_testing (boolean)
             initial_cash (number)
             buy_sell_amt (number): cash amount to buy or sell
@@ -45,6 +47,7 @@ class StockEnv():
 
         #data = get_data()  # pricing data
         self.pricing_data = data
+        self.all_tickers = all_tickers
 
     def generate_episode(self, model):
         """
@@ -164,9 +167,8 @@ class StockEnv():
 
         if self.is_testing:
             print(portfolio_cash_entire)
-            tickers = ["AAPL", "AMZN", "MSFT", "INTC", "REGN", "CASH"]
             visualize_stride = int(portfolio_cash_entire.shape[1] / 10)
-            visualize_portfolio(portfolio_cash_entire[:, ::visualize_stride], tickers)
+            visualize_portfolio(portfolio_cash_entire[:, ::visualize_stride], self.all_tickers)
             visualize_linegraph(rewards)
 
         return states, actions, rewards

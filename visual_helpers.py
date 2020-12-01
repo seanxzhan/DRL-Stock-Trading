@@ -119,7 +119,7 @@ def visualize_portfolio(portfolio, tickers):
     plt.show()
 
 def unit_test_visualization():
-    train, test = get_data()
+    train, test, _ = get_data()
     print(f'shape: {train.shape}')
     print(train[:, :10, :])
     visualize_linegraph(train[0, :, 0])
