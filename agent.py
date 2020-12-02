@@ -48,15 +48,16 @@ class PolicyGradientAgent(tf.keras.Model):
         self.buffer_episode_lens = []  # a list of `episode length` of experience that were stored in the buffer
                                         # used to facilitate self.forget()
         self.num_actions = 3 * self.num_stocks
-        self.actor_H1 = 24  # hidden layer output sizes
-        self.actor_H2 = 24
-        self.critic_H1 = 64
-        self.critic_H2 = 16
-        # self.lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=[30, 110, 220, 300],
-        #                                                                         values=[0.01, 0.005, 0.003, 0.002,
-        #                                                                                 0.001])
+        self.actor_H1 = 14  # hidden layer output sizes
+        self.actor_H2 = 30
+        self.critic_H1 = 60
+        self.critic_H2 = 30
+        self.lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=[30, 110, 220, 300],
+                                                                                values=[0.01, 0.005, 0.003, 0.002,
+                                                                                        0.001])
+        # self.lr_schedule = 0.001
         self.lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(initial_learning_rate=0.001,
-                                                                          decay_rate=0.98, decay_steps=100000)
+                                                                          decay_rate=0.99, decay_steps=100000)
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
 
         # model layers
@@ -148,7 +149,6 @@ class PolicyGradientAgent(tf.keras.Model):
         :param discounted_reward: discounted rewards through the batch. (batch_sz, )
         :return a scalar loss of the whole batch
         """
-        batch_sz = len(actions_taken)
         action_probs, states_summary = self.call(states)  # action_probs: (batch_sz, self.num_stock, 3)
         values = self.value(states_summary)  # (batch_sz, 1)
         values = tf.reshape(values, (-1))  # (batch_sz,)
@@ -156,9 +156,9 @@ class PolicyGradientAgent(tf.keras.Model):
         # only desired indices will be multiplied by 1, others are multiplied by 0
         filtered_tens = tf.multiply(action_probs, hot_tens) 
         # add the last dimension to get rid of 0's from filtered_tens
-        probs_action_taken_each_stock = tf.keras.backend.sum(filtered_tens, axis=-1) # (batch_sz, num_stocks)
+        probs_action_taken_each_stock = tf.reduce_sum(filtered_tens, axis=-1, keepdims=True)  # (batch_sz, num_stocks)
         # assume each stock is independent
-        probs_of_action_taken = tf.reduce_prod(probs_action_taken_each_stock, axis=1)
+        probs_of_action_taken = tf.math.reduce_prod(probs_action_taken_each_stock, axis=1)
         
         advantage = discounted_reward - values  # (batch_sz,)
         actor_loss = - tf.reduce_sum(tf.math.multiply(tf.math.log(probs_of_action_taken), tf.stop_gradient(advantage)))

@@ -2,18 +2,19 @@ import yfinance as yf
 import tensorflow as tf
 
 
-def get_data():
+def get_data(all_tickers):
     """
     Import data from yfinance and split data into training set and testing set
+
+    :param all_tickers: a list of all the Stock names whose data needs to be retrived
 
     :returns: A tuple of tensors (training set, testing set). 
               Each tensor has dimension [num_stocks, num_days, state_size]
     """
-    all_tickers = ["AAPL", "AMZN", "MSFT", "INTC", "REGN"]
     str_tickers = ' '.join(all_tickers)
     num_stocks = len(all_tickers)    
     state_size = 5      # open, high, low, adjusted close, volume
-    train_to_test_ratio = 0.9
+    train_to_test_ratio = 1  # TODO: change this back
 
     # start, end, interval can be changed
     daily_data = yf.download(
@@ -41,7 +42,6 @@ def get_data():
     all_tickers.append("cash")
     return train_data, test_data, all_tickers
 
-get_data()
 
 # IF WE DECIDE TO DO HOURLY DATA:
 # data_hourly = yf.download(
