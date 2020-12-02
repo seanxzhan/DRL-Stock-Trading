@@ -39,7 +39,7 @@ def get_data(all_tickers):
     #TODO: necessary to save this data?
 
     #all_tickers_cash = ["AAPL", "AMZN", "MSFT", "INTC", "REGN", "CASH"]
-    all_tickers.append("cash")
+    all_tickers.append("CASH")
     return train_data, test_data, all_tickers
 
 

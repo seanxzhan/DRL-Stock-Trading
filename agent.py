@@ -41,7 +41,7 @@ class PolicyGradientAgent(tf.keras.Model):
         # RL agent params
         self.datum_size = datum_size
         self.num_stocks = num_stocks
-        self.batch_size = 50
+        self.batch_size = 60
         self.buffer = []  # initialize the memory replay buffer
         self.buffer_size = 100  # maximum episodes the buffer can hold
         self.buffer_num_elt = 0  # the number of current elements in the buffer
@@ -62,6 +62,7 @@ class PolicyGradientAgent(tf.keras.Model):
 
         # model layers
         self.resume = resume
+        # self.lift = tf.keras.layers.Dense(36)
         self.actor_gru_1 = tf.keras.layers.GRU(self.actor_H1, return_sequences=True, return_state=True)
         self.actor_dropout_1 = tf.keras.layers.Dropout(rate=0.1)
         self.actor_gru_2 = tf.keras.layers.GRU(self.actor_H2)
@@ -111,6 +112,7 @@ class PolicyGradientAgent(tf.keras.Model):
         price_history = tf.reshape(price_history, (-1, self.past_num, self.num_stocks * self.datum_size))  # (batch_sz, past_num, num_stocks * datum_size)
         portfolio = [state[1] for state in states]  # (batch_sz, num_stock + 1)
         # pass through layers
+        # price_history = self.lift(price_history)
         gru_1_out_whole_seq, _ = self.actor_gru_1(price_history)  # (batch_sz, past_num, actor_H1)
         gru_1_out_whole_seq = self.actor_dropout_1(gru_1_out_whole_seq)
         gru_2_out = self.actor_dropout_2(self.actor_gru_2(gru_1_out_whole_seq))  # (batch_sz, actor_H2)
@@ -155,10 +157,13 @@ class PolicyGradientAgent(tf.keras.Model):
         hot_tens = tf.one_hot(actions_taken, 3)  # depth of 3, since we have 3 possible actions
         # only desired indices will be multiplied by 1, others are multiplied by 0
         filtered_tens = tf.multiply(action_probs, hot_tens) 
-        # add the last dimension to get rid of 0's from filtered_tens
-        probs_action_taken_each_stock = tf.reduce_sum(filtered_tens, axis=-1, keepdims=True)  # (batch_sz, num_stocks)
+        # add the last dimension to get rid of 0's from filtered_tens. result: (batch_sz, num_stocks)
+        # probs_action_taken_each_stock = tf.keras.backend.sum(filtered_tens, axis=-1)  # option1
+        probs_action_taken_each_stock = tf.reduce_sum(filtered_tens, axis=-1, keepdims=True)  # option2
+        # probs_of_action_taken = tf.reduce_sum(probs_action_taken_each_stock, axis=1)
         # assume each stock is independent
-        probs_of_action_taken = tf.math.reduce_prod(probs_action_taken_each_stock, axis=1)
+        probs_of_action_taken = tf.reduce_prod(probs_action_taken_each_stock, axis=1)
+        probs_of_action_taken = tf.reshape(probs_of_action_taken, (probs_of_action_taken.shape[0],)) #option2
         
         advantage = discounted_reward - values  # (batch_sz,)
         actor_loss = - tf.reduce_sum(tf.math.multiply(tf.math.log(probs_of_action_taken), tf.stop_gradient(advantage)))

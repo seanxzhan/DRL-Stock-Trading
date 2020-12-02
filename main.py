@@ -7,12 +7,15 @@ from random import randint
 from visual_helpers import visualize_linegraph, visualize_portfolio
 
 
-def train(train_data, model, train_tickers):
+
+def train(train_data, model, num_rand_stocks, all_tickers):
     """
     the train function, train the model for an entire epoch
 
     :param train_data: the preprocessed training data, of shape [num_stocks, num_days, datum_size]
     :param model: the RL agent
+    :param num_rand_stocks: number of random stocks to feed to the network in each episode
+    :param all_tickers: all the preprocessed tickers
 
     :return to be decided
     """
@@ -24,8 +27,25 @@ def train(train_data, model, train_tickers):
         if episode % 10 == 0: print(f"Training batch {episode}")
         start = episode * episode_max_days
         end = start + episode_max_days
-        batch_input = train_data[:, start:end, :]
-        env = StockEnv(batch_input, train_tickers)
+        episode_input = train_data[:, start:end, :]
+        
+        # pick num_stocks random stocks
+        # exclude cash when we randomly pick stocks (cash is the last element of all_tickers)
+        rand_stock_indices = np.random.choice(len(all_tickers) - 1, num_rand_stocks, replace=False)
+        rand_stock_indices = tf.reshape(rand_stock_indices, (len(rand_stock_indices), 1))
+        episode_input = tf.gather_nd(episode_input, rand_stock_indices)
+
+        # randomize starting date, keep at least one chunk of num_days left
+        # past_num = model.past_num
+        # offset = 2 * past_num
+        # rand_start = randint(0, max_episode_days - past_num - offset)
+
+        # randomize starting date in each episode
+        rand_start = randint(0, int(max_episode_days / 5))
+        episode_input = episode_input[:, rand_start:max_episode_days,:]
+
+        env = StockEnv(episode_input, train_tickers)
+
         with tf.GradientTape() as tape:
             states, actions, rewards = env.generate_episode(model)
             discounted_rewards = discount(rewards)
@@ -36,6 +56,7 @@ def train(train_data, model, train_tickers):
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
         loss_list.append(model_loss)  # reward at end of batch
     return list(loss_list)
+
 
 
 def test(test_data, model, tickers):
@@ -63,17 +84,23 @@ def main():
     test_data = test_data[:, 0:200, :]
     num_stocks, num_days, datum_size = train_data.shape
     past_num = 50
+    
+    # toggle this
+    randomize_input_stocks = False
+    num_rand_stocks = 5 if randomize_input_stocks else num_stocks
 
     # creating model
-    model = PolicyGradientAgent(datum_size, num_stocks, past_num)
+    model = PolicyGradientAgent(datum_size, num_rand_stocks, past_num)
+
 
     # training
     for i in range(NUM_EPOCH):
         print(f'EPOCH: --------------------------------{i}')
         start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
         sample = train_data[:, start_day:, :]
-        epoch_loss = train(train_data, model, x_tickers)  # change to sample for random initial time step
+        epoch_loss = train(train_data, model, num_rand_stocks, x_tickers)  # change to sample for random initial time step
         print(f"loss list for epoch {i} is {epoch_loss}")
+
 
     # testing
     test(test_data, model, y_tickers)

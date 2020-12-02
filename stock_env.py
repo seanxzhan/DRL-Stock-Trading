@@ -24,6 +24,7 @@ class StockEnv():
 
         Args:
             data [num_stocks, num_days, state_size]: price data (set to None to input all available history data)
+            tickers (num_stocks + 1, ): all reprocessed stocks, including cash
             is_testing (boolean)
             initial_cash (number)
             buy_sell_amt (number): cash amount to buy or sell
@@ -45,9 +46,9 @@ class StockEnv():
         self.interest = interest_annual / days_per_year  # daily penalty on borrowed cash
         self.borrow_interest = borrow_interest_annual / days_per_year  # daily penalty on borrowed stocks
         self.transaction_penalty = transaction_penalty
-
         self.pricing_data = get_data(self.tickers) if data is None else data
-
+        
+        
     def generate_episode(self, model):
         """
         generate an episode of experience based on the model's current policy
@@ -108,6 +109,7 @@ class StockEnv():
 
             probabilities = model.call([state])[0][0]  # batch_sz=1, take only the first arg
             probabilities = probabilities.numpy().reshape(num_stocks, 3)
+            # print(probabilities)
 
             # sample actions
             for i in range(num_stocks):
@@ -120,6 +122,8 @@ class StockEnv():
                 #     subaction = np.argmax(probabilities[i])
                 # else:
                 subaction = np.random.choice(3, 1, p=probabilities[i])[0]
+                # print("probabilities for stock: {}".format(probabilities[i]))
+                # print("subaction selected: {}".format(subaction))
                 action.append(subaction)
                 if subaction == 1:  # buy
                     portfolio_cash[num_stocks] -= self.buy_sell_amt
@@ -166,6 +170,7 @@ class StockEnv():
             print(portfolio_cash_entire)
             visualize_stride = int(portfolio_cash_entire.shape[1] / 10)
             visualize_portfolio(portfolio_cash_entire[:, ::visualize_stride], self.tickers)
+
             visualize_linegraph(rewards)
 
         return states, actions, rewards
