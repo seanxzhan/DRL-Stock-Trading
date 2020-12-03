@@ -4,14 +4,16 @@ from preprocess import get_data
 from random import randint
 from visual_helpers import visualize_portfolio, visualize_linegraph
 
+
 class StockEnv():
     def __init__(self,
                  data,
+                 tickers,
                  is_testing=False,
                  initial_cash=1000,
                  buy_sell_amt=100,
                  exit_threshold=0,
-                 max_days= 100,
+                 max_days=100,
                  inflation_annual=0.02,
                  interest_annual=0.03,
                  borrow_interest_annual=0.03,
@@ -21,7 +23,8 @@ class StockEnv():
         and borrowing. It ensures that the episode will exit when total cash value of assets < exit_threshold.
 
         Args:
-            data [num_stocks, num_days, state_size]: price data
+            data [num_stocks, num_days, state_size]: price data (set to None to input all available history data)
+            tickers (num_stocks + 1, ): all reprocessed stocks, including cash
             is_testing (boolean)
             initial_cash (number)
             buy_sell_amt (number): cash amount to buy or sell
@@ -33,6 +36,7 @@ class StockEnv():
             transaction_penalty (number): transaction fee percentage
         """
         self.is_testing = is_testing
+        self.tickers = tickers
         days_per_year = 261  # number of trading days per year
         self.initial_cash = initial_cash
         self.buy_sell_amt = buy_sell_amt
@@ -42,10 +46,9 @@ class StockEnv():
         self.interest = interest_annual / days_per_year  # daily penalty on borrowed cash
         self.borrow_interest = borrow_interest_annual / days_per_year  # daily penalty on borrowed stocks
         self.transaction_penalty = transaction_penalty
-
-        #data = get_data()  # pricing data
-        self.pricing_data = data
-
+        self.pricing_data = get_data(self.tickers) if data is None else data
+        
+        
     def generate_episode(self, model):
         """
         generate an episode of experience based on the model's current policy
@@ -78,7 +81,7 @@ class StockEnv():
         initial_timestep = past_num
         timestep = initial_timestep
 
-        timestep_stop = tf.shape(self.pricing_data)[1] + 1 # if self.max_days is None else timestep + self.max_days
+        timestep_stop = tf.shape(self.pricing_data)[1] + 1 #if self.max_days is None else timestep + self.max_days
         portfolio_cash = [0] * (num_stocks + 1)  # cash value of each asset
         portfolio_cash[num_stocks] = self.initial_cash  # cash on hand
         portfolio_shares = [0] * num_stocks  # shares of each stock owned
@@ -89,7 +92,7 @@ class StockEnv():
 
         first_step = True #boolean variable used to create array for visualization
         # ================ GENERATION ================
-        while total_cash_value > self.exit_threshold:
+        while np.sum(portfolio_cash) > 0:  # cannot have negative stocks
             if timestep >= timestep_stop:  # we've reached the end of pricing_data
                 break
 
@@ -104,19 +107,23 @@ class StockEnv():
             transactions = 0  # number of buys and sells
             state = tuple((sliced_price_history, portfolio_cash))
 
-            probabilities = model.call([state])[0]  # batch_sz=1
+            probabilities = model.call([state])[0][0]  # batch_sz=1, take only the first arg
             probabilities = probabilities.numpy().reshape(num_stocks, 3)
+            # print(probabilities)
 
             # sample actions
             for i in range(num_stocks):
                 # 0=hold 1=buy 2=sell
-                if np.isnan(probabilities[i][0]): #TODO: fix agent outputting nan probabilities
+                print(probabilities[i], i)
+                if np.isnan(probabilities[i][0]):  # TODO: fix agent outputting nan probabilities
                     print("nan")
-                    probabilities[i] = [1/3, 1/3, 1/3]
+                    probabilities[i] = [1, 0, 0]
                 # if self.is_testing:
                 #     subaction = np.argmax(probabilities[i])
                 # else:
                 subaction = np.random.choice(3, 1, p=probabilities[i])[0]
+                # print("probabilities for stock: {}".format(probabilities[i]))
+                # print("subaction selected: {}".format(subaction))
                 action.append(subaction)
                 if subaction == 1:  # buy
                     portfolio_cash[num_stocks] -= self.buy_sell_amt
@@ -161,9 +168,9 @@ class StockEnv():
 
         if self.is_testing:
             print(portfolio_cash_entire)
-            tickers = ["AAPL", "AMZN", "MSFT", "INTC", "REGN", "CASH"]
             visualize_stride = int(portfolio_cash_entire.shape[1] / 10)
-            visualize_portfolio(portfolio_cash_entire[:, ::visualize_stride], tickers)
+            visualize_portfolio(portfolio_cash_entire[:, ::visualize_stride], self.tickers)
+
             visualize_linegraph(rewards)
 
         return states, actions, rewards
