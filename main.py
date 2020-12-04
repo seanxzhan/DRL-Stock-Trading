@@ -1,11 +1,10 @@
 import numpy as np
 import tensorflow as tf
-from agent import PolicyGradientAgent
+from agent import PolicyGradientAgent, save_model, load_model
 from stock_env import StockEnv, discount
 from preprocess import get_data
 from random import randint
 from visual_helpers import visualize_linegraph, visualize_portfolio
-
 
 
 def train(train_data, model, num_rand_stocks, all_tickers):
@@ -41,10 +40,10 @@ def train(train_data, model, num_rand_stocks, all_tickers):
         # rand_start = randint(0, max_episode_days - past_num - offset)
 
         # randomize starting date in each episode
-        rand_start = randint(0, int(max_episode_days / 5))
-        episode_input = episode_input[:, rand_start:max_episode_days,:]
+        rand_start = randint(0, int(episode_max_days / 5))
+        episode_input = episode_input[:, rand_start:episode_max_days,:]
 
-        env = StockEnv(episode_input, train_tickers)
+        env = StockEnv(episode_input, all_tickers)
 
         with tf.GradientTape() as tape:
             states, actions, rewards = env.generate_episode(model)
@@ -54,9 +53,8 @@ def train(train_data, model, num_rand_stocks, all_tickers):
             model_loss = model.loss(repl_states, repl_actions, repl_discounted_rewards)
         gradients = tape.gradient(model_loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-        loss_list.append(model_loss)  # reward at end of batch
+        loss_list.append(model_loss.numpy())  # reward at end of batch
     return list(loss_list)
-
 
 
 def test(test_data, model, tickers):
@@ -66,8 +64,11 @@ def test(test_data, model, tickers):
     print("testing")
     env = StockEnv(test_data, tickers, is_testing=True)
     states, actions, rewards = env.generate_episode(model)
-
-    print(f'final cash: {rewards[-1]}')
+    min_testing_episode_len = 20
+    while len(rewards) < min_testing_episode_len:
+        print("test episode not long enough")
+        states, actions, rewards = env.generate_episode(model)
+    print(f'final portfolio total value: {rewards[-1]}')
 
 
 def main():
@@ -75,13 +76,16 @@ def main():
     probabilities = NaN error occurs occasionally.
     """
     NUM_EPOCH = 3
+    RESUME = False
+    SAVE = False
 
     # pre-process data
     train_tickers = ["AAPL", "AMZN", "MSFT", "INTC", "REGN"]
     test_tickers = ["ADBE", "DIS", "JNJ", "HON", "PFE"]
     train_data, _, x_tickers = get_data(train_tickers)  # data: (num_stock, num_days, datum_size)
     test_data, _, y_tickers = get_data(test_tickers)
-    test_data = test_data[:, 0:200, :]
+    testing_days = 200
+    test_data = test_data[:, 0:testing_days, :]
     num_stocks, num_days, datum_size = train_data.shape
     past_num = 50
     
@@ -90,7 +94,10 @@ def main():
     num_rand_stocks = 5 if randomize_input_stocks else num_stocks
 
     # creating model
-    model = PolicyGradientAgent(datum_size, num_rand_stocks, past_num)
+    if RESUME:
+        model = load_model('saved_model')
+    else:
+        model = PolicyGradientAgent(datum_size, num_rand_stocks, past_num)
 
 
     # training
@@ -100,7 +107,8 @@ def main():
         sample = train_data[:, start_day:, :]
         epoch_loss = train(train_data, model, num_rand_stocks, x_tickers)  # change to sample for random initial time step
         print(f"loss list for epoch {i} is {epoch_loss}")
-
+    if SAVE:
+        save_model(model, 'saved_model')
 
     # testing
     test(test_data, model, y_tickers)

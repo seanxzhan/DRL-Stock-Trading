@@ -14,10 +14,10 @@ class StockEnv():
                  buy_sell_amt=100,
                  exit_threshold=0,
                  max_days=100,
-                 inflation_annual=0.02,
-                 interest_annual=0.03,
-                 borrow_interest_annual=0.03,
-                 transaction_penalty=0.0001):
+                 inflation_annual=0,
+                 interest_annual=0,
+                 borrow_interest_annual=0,
+                 transaction_penalty=0.01):
         """
         Initializes a stock environment. The environment handles penalties resulting from inflation
         and borrowing. It ensures that the episode will exit when total cash value of assets < exit_threshold.
@@ -47,8 +47,7 @@ class StockEnv():
         self.borrow_interest = borrow_interest_annual / days_per_year  # daily penalty on borrowed stocks
         self.transaction_penalty = transaction_penalty
         self.pricing_data = get_data(self.tickers) if data is None else data
-        
-        
+
     def generate_episode(self, model):
         """
         generate an episode of experience based on the model's current policy
@@ -81,7 +80,7 @@ class StockEnv():
         initial_timestep = past_num
         timestep = initial_timestep
 
-        timestep_stop = tf.shape(self.pricing_data)[1] + 1 #if self.max_days is None else timestep + self.max_days
+        timestep_stop = tf.shape(self.pricing_data)[1] + 1  # if self.max_days is None else timestep + self.max_days
         portfolio_cash = [0] * (num_stocks + 1)  # cash value of each asset
         portfolio_cash[num_stocks] = self.initial_cash  # cash on hand
         portfolio_shares = [0] * num_stocks  # shares of each stock owned
@@ -90,15 +89,16 @@ class StockEnv():
 
         portfolio_cash_entire = np.zeros((num_stocks + 1, 1))
 
-        first_step = True #boolean variable used to create array for visualization
+        first_step = True  # boolean variable used to create array for visualization
         # ================ GENERATION ================
-        while np.sum(portfolio_cash) > 0:  # cannot have negative stocks
+        while np.sum(portfolio_cash) > 0:
+        # while all(i >= 0 for i in portfolio_cash) > 0:  # cannot have negative stocks
             if timestep >= timestep_stop:  # we've reached the end of pricing_data
                 break
 
             sliced_price_history = self.pricing_data[:, timestep -
-                                                     initial_timestep:timestep, :]
-            closing_prices = np.reshape(sliced_price_history[:, -1, 3],(-1,))
+                                                        initial_timestep:timestep, :]
+            closing_prices = np.reshape(sliced_price_history[:, -1, 3], (-1,))
 
             # recalculate portfolio_cash based on new prices
             portfolio_cash[:-1] = portfolio_shares * closing_prices
@@ -109,13 +109,11 @@ class StockEnv():
 
             probabilities = model.call([state])[0][0]  # batch_sz=1, take only the first arg
             probabilities = probabilities.numpy().reshape(num_stocks, 3)
-            # print(probabilities)
 
             # sample actions
             for i in range(num_stocks):
                 # 0=hold 1=buy 2=sell
-                print(probabilities[i], i)
-                if np.isnan(probabilities[i][0]):  # TODO: fix agent outputting nan probabilities
+                if np.isnan(probabilities[i][0]):
                     print("nan")
                     probabilities[i] = [1, 0, 0]
                 # if self.is_testing:
@@ -150,7 +148,7 @@ class StockEnv():
             if portfolio_cash[num_stocks] < 0:
                 portfolio_cash[num_stocks] *= 1 + self.interest
             # inflation
-            portfolio_cash = np.asarray(portfolio_cash)*(1 - self.inflation)
+            portfolio_cash = np.asarray(portfolio_cash) * (1 - self.inflation)
             # recalculate total_cash_value
             total_cash_value = np.sum(portfolio_cash)
 
@@ -159,21 +157,29 @@ class StockEnv():
             rewards.append(total_cash_value)
             timestep += 1
 
-            #portfolio_cash_entire (num_stocks + 1, n): portfolio_cash across n time steps
-            if first_step == True:
+            # portfolio_cash_entire (num_stocks + 1, n): portfolio_cash across n time steps
+            if first_step:
                 portfolio_cash_entire[:, 0] = portfolio_cash
                 first_step = False
             else:
                 portfolio_cash_entire = np.hstack((portfolio_cash_entire, portfolio_cash.reshape((-1, 1))))
 
+        # adjust rewards to be the difference between total portfolio values between two time steps
+        delta_rewards = [rewards[i+1] - rewards[i] for i in range(len(rewards)-1)]
+        delta_rewards = [rewards[0] - self.initial_cash] + delta_rewards  # first step reward
+        # reward long episodes
+        delta_rewards = [delta_rewards[i] + 100 * len(rewards) for i in range(len(rewards))]
+
         if self.is_testing:
-            print(portfolio_cash_entire)
             visualize_stride = int(portfolio_cash_entire.shape[1] / 10)
+            print("portfolio_cash_entire")
+            print(portfolio_cash_entire, portfolio_cash.shape, visualize_stride)
             visualize_portfolio(portfolio_cash_entire[:, ::visualize_stride], self.tickers)
 
             visualize_linegraph(rewards)
 
         return states, actions, rewards
+
 
 def discount(rewards, discount_factor=.99):
     """
@@ -185,7 +191,7 @@ def discount(rewards, discount_factor=.99):
     :returns: discounted_rewards: list containing the discounted rewards for each time step in the original rewards list
     """
     length = len(rewards)
-    discounted = np.zeros((length, ))
+    discounted = np.zeros((length,))
     accum = 0
     for i in range(length):
         accum = accum * discount_factor + rewards[length - i - 1]
