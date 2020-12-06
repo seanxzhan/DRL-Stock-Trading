@@ -5,7 +5,7 @@ import random
 
 
 class PolicyGradientAgent(tf.keras.Model):
-    def __init__(self, datum_size, num_stocks, past_num, resume=False):
+    def __init__(self, datum_size, num_stocks, past_num):
         """
         this class inherits from tf.keras.Model
         a general class of policy gradient RL agents using actor-critic
@@ -26,8 +26,6 @@ class PolicyGradientAgent(tf.keras.Model):
         :param datum_size: the size of the state space, passed in from pre-processing
         :param num_stocks: the number of stocks the agent manages at once
         :param past_num: the past number of days to consider when making the current decision
-        :param resume: True if creating the model from a previously trained model, False if training a new model from
-                        random weights
         """
         super(PolicyGradientAgent, self).__init__()
 
@@ -52,25 +50,25 @@ class PolicyGradientAgent(tf.keras.Model):
         self.actor_H2 = 30
         self.critic_H1 = 60
         self.critic_H2 = 30
-        self.lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=[30, 110, 220, 300],
-                                                                                values=[0.01, 0.005, 0.003, 0.002,
-                                                                                        0.001])
-        # self.lr_schedule = 0.001
-        self.lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(initial_learning_rate=0.001,
-                                                                          decay_rate=0.99, decay_steps=100000)
+        # self.lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=[30, 110, 220, 300],
+        #                                                                         values=[0.01, 0.005, 0.003, 0.002,
+        #                                                                                 0.001])
+        # self.lr_schedule = 0.003
+        self.lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(initial_learning_rate=0.003,
+                                                                          decay_rate=0.98, decay_steps=100000)
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
 
         # model layers
-        self.resume = resume
-        # self.lift = tf.keras.layers.Dense(36)
-        self.actor_gru_1 = tf.keras.layers.GRU(self.actor_H1, return_sequences=True, return_state=True)
+        initializer = tf.keras.initializers.GlorotUniform()
+        self.actor_gru_1 = tf.keras.layers.GRU(self.actor_H1, return_sequences=True, return_state=True, kernel_initializer=initializer)
         self.actor_dropout_1 = tf.keras.layers.Dropout(rate=0.1)
-        self.actor_gru_2 = tf.keras.layers.GRU(self.actor_H2)
+        self.actor_gru_2 = tf.keras.layers.GRU(self.actor_H2, kernel_initializer=initializer)
         self.actor_dropout_2 = tf.keras.layers.Dropout(rate=0.1)
-        self.actor_dense = tf.keras.layers.Dense(self.num_actions)
-        self.critic_dense_1 = tf.keras.layers.Dense(self.critic_H1, activation='relu')
-        self.critic_dense_2 = tf.keras.layers.Dense(self.critic_H2, activation='relu')
-        self.critic_dense_3 = tf.keras.layers.Dense(1)
+        self.actor_dense = tf.keras.layers.Dense(self.num_actions, kernel_initializer=initializer)
+        self.normalizor = tf.keras.layers.LayerNormalization()
+        self.critic_dense_1 = tf.keras.layers.Dense(self.critic_H1, activation='relu', kernel_initializer=initializer)
+        self.critic_dense_2 = tf.keras.layers.Dense(self.critic_H2, activation='relu', kernel_initializer=initializer)
+        self.critic_dense_3 = tf.keras.layers.Dense(1, kernel_initializer=initializer)
         # attempt to use the keras.Sequential API
         # if resume:
         #     self.actor = tf.keras.models.load_model("saved_actor_model")
@@ -120,6 +118,7 @@ class PolicyGradientAgent(tf.keras.Model):
         actor_out = self.actor_dense(past_and_current_info)  # (batch_sz * self.num_actions)
         # reshape the output and softmax
         actor_out = tf.reshape(actor_out, (-1, self.num_stocks, 3))
+        actor_out = self.normalizor(actor_out)
         action_probs = tf.nn.softmax(actor_out)  # softmaxes across last dimension only
         return action_probs, past_and_current_info
 
@@ -239,3 +238,23 @@ class PolicyGradientAgent(tf.keras.Model):
             states, actions_taken, discounted_reward = list(zip(*list_of_pairs))
             return states, actions_taken, discounted_reward
 
+
+def save_model(model, file_path):
+    """
+    save the weights of a trained model to the current directory
+
+    :param model: a trained model
+    :param file_path: a string, specifying the file path to save the model
+    """
+    model.save(file_path)
+
+
+def load_model(file_path):
+    """
+    load the model with a previously trained model
+
+    :param file_path: a string, specifying the file path to the saved model
+    :return model: a trained model
+    """
+    model = tf.keras.models.load_model(file_path)
+    return model

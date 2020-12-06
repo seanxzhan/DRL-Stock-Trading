@@ -78,6 +78,7 @@ def bar_plot(ax, data, colors=None, total_width=0.8, single_width=1, legend=True
     if legend:
         ax.legend(bars, data.keys())
 
+
 def visualize_linegraph(rewards):
     """
     param: rewards (episode_length, )
@@ -89,6 +90,7 @@ def visualize_linegraph(rewards):
     plt.title('Rewards')
     plt.plot(rewards)
     plt.show()
+
 
 def visualize_portfolio(portfolio, tickers):
     """
@@ -112,11 +114,12 @@ def visualize_portfolio(portfolio, tickers):
         str = tickers[i]
         dict_portfolio[str] = portfolio[i]
 
-    print(dict_portfolio)
+    print("portfolio dict in vis:", dict_portfolio)
 
     fig, ax = plt.subplots()
     bar_plot(ax, dict_portfolio, total_width=.8, single_width=.9)
     plt.show()
+
 
 def unit_test_visualization():
     train, test, _ = get_data()
