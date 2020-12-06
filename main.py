@@ -34,11 +34,6 @@ def train(train_data, model, num_rand_stocks, all_tickers):
         rand_stock_indices = tf.reshape(rand_stock_indices, (len(rand_stock_indices), 1))
         episode_input = tf.gather_nd(episode_input, rand_stock_indices)
 
-        # randomize starting date, keep at least one chunk of num_days left
-        # past_num = model.past_num
-        # offset = 2 * past_num
-        # rand_start = randint(0, max_episode_days - past_num - offset)
-
         # randomize starting date in each episode
         rand_start = randint(0, int(episode_max_days / 5))
         episode_input = episode_input[:, rand_start:episode_max_days,:]
@@ -57,12 +52,32 @@ def train(train_data, model, num_rand_stocks, all_tickers):
     return list(loss_list)
 
 
-def test(test_data, model, tickers):
+def test(test_data, model, tickers, randomize, num_rand_stocks=0):
     """
-    the test function: DOCSTRING TO BE WRITTEN
+    the test function: test agent on test_data
+    if randomize == True, we know we have randomized stocks in training, 
+    so we test on num_rand_stocks randomly selected stocks from test_data
+    if otherwise, we used the entire test_data set
+
+    :param test_data: the testing set
+    :param model: the trained model
+    :param tickers: stocks names corresponding to test_data
+    :param radomize: boolean indicating whether we have randomized stocks in training
+    :param num_rand_stocks: number of stocks randomized in training
     """
-    print("testing")
-    env = StockEnv(test_data, tickers, is_testing=True)
+    if randomize:
+        # the last element of tickers is "CASH", we don't include "CASH" in randomization
+        rand_stock_indices = np.random.choice(len(tickers) - 1, num_rand_stocks, replace=False)
+        # get randomly selected stock names
+        episode_tickers = [tickers[index] for index in rand_stock_indices]
+        episode_tickers.append("CASH")
+        rand_stock_indices = tf.reshape(rand_stock_indices, (len(rand_stock_indices), 1))
+        # saving the randomization to a new variable so we don't mess w/ test_data
+        episode_input = tf.gather_nd(test_data, rand_stock_indices) 
+    else:
+        episode_input = test_data
+        episode_tickers = tickers
+    env = StockEnv(episode_input, episode_tickers, is_testing=True)
     states, actions, rewards = env.generate_episode(model)
     min_testing_episode_len = 20
     while len(rewards) < min_testing_episode_len:
@@ -78,20 +93,37 @@ def main():
     NUM_EPOCH = 3
     RESUME = False
     SAVE = False
+    RANDOMIZE = True
 
-    # pre-process data
-    train_tickers = ["AAPL", "AMZN", "MSFT", "INTC", "REGN"]
-    test_tickers = ["ADBE", "DIS", "JNJ", "HON", "PFE"]
-    train_data, _, x_tickers = get_data(train_tickers)  # data: (num_stock, num_days, datum_size)
-    test_data, _, y_tickers = get_data(test_tickers)
+    # planning to test on different stocks
+    train_tickers = ["AAPL", "EBAY", "MSFT", "INTC", "ADBE"]
+    if RANDOMIZE:
+        # add more stocks to train_tickers if we want
+        train_tickers.append("CVS")
+        train_tickers.append("DIS")
+        train_tickers.append("FDX")
+        train_tickers.append("JPM")
+        train_tickers.append("WMT")
+    test_tickers = ["REGN", "AMZN", "JNJ", "HON", "PFE"]
+    train_data, test_data_same_ticks, x_tickers = get_data(train_tickers) # train_data should be the same for both testing methods
+    _, test_data_diff_ticks, y_tickers = get_data(test_tickers)
+
     testing_days = 200
-    test_data = test_data[:, 0:testing_days, :]
+
+    # we select random testing days for test_data_diff_ticks and test_data_same_ticks
+    assert test_data_same_ticks.shape[1] == test_data_diff_ticks.shape[1]
+    assert test_data_diff_ticks.shape[1] > testing_days
+    rand_start = randint(0, int(( test_data_diff_ticks.shape[1] - testing_days ) / 5 ))
+    rand_end = rand_start + testing_days
+    # the testing days for both methods will be the same
+    test_data_diff_ticks = test_data_diff_ticks[:, rand_start:rand_end, :]
+    test_data_same_ticks = test_data_same_ticks[:, rand_start:rand_end, :]
+
     num_stocks, num_days, datum_size = train_data.shape
     past_num = 50
     
-    # toggle this
-    randomize_input_stocks = False
-    num_rand_stocks = 5 if randomize_input_stocks else num_stocks
+    # we can also toggle the number below
+    num_rand_stocks = 5 if RANDOMIZE else num_stocks
 
     # creating model
     if RESUME:
@@ -103,15 +135,27 @@ def main():
     # training
     for i in range(NUM_EPOCH):
         print(f'EPOCH: --------------------------------{i}')
-        start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
-        sample = train_data[:, start_day:, :]
+        # start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
+        # sample = train_data[:, start_day:, :]
         epoch_loss = train(train_data, model, num_rand_stocks, x_tickers)  # change to sample for random initial time step
         print(f"loss list for epoch {i} is {epoch_loss}")
     if SAVE:
         save_model(model, 'saved_model')
 
+    # if RANDOMIZE, model is trained on num_rand_stocks number of stocks
+    # if not, model is trained on len(train_tickers) == train_data.shape[0] number of stocks
+    # thus, if RANDOMIZE and "test on same stocks", we randomly pick num_rand_stocks number of stocks to test
+
     # testing
-    test(test_data, model, y_tickers)
+    # test on same stocks
+    print("\n\n----- Testing on same stocks, RANDOMIZE:{} -----".format(RANDOMIZE))
+    test(test_data_same_ticks, model, x_tickers, RANDOMIZE, num_rand_stocks)
+
+    # test on different stocks
+    # we don't need to randomize test_data_diff_ticks when testing on different stocks
+    print("\n\n----- Testing on different stocks -----")
+    test(test_data_diff_ticks, model, y_tickers, False)
+
     print("END")
 
 
