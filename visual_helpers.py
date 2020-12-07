@@ -114,7 +114,7 @@ def visualize_portfolio(portfolio, tickers):
         str = tickers[i]
         dict_portfolio[str] = portfolio[i]
 
-    print("portfolio dict in vis:", dict_portfolio)
+    # print("portfolio dict in vis:", dict_portfolio)
 
     fig, ax = plt.subplots()
     bar_plot(ax, dict_portfolio, total_width=.8, single_width=.9)
