@@ -14,7 +14,7 @@ def get_data(all_tickers):
     str_tickers = ' '.join(all_tickers)
     num_stocks = len(all_tickers)    
     state_size = 5      # open, high, low, adjusted close, volume
-    train_to_test_ratio = 1  # TODO: change this back
+    train_to_test_ratio = 0.9
 
     # start, end, interval can be changed
     daily_data = yf.download(
