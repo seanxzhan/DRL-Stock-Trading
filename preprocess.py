@@ -14,12 +14,12 @@ def get_data(all_tickers):
     str_tickers = ' '.join(all_tickers)
     num_stocks = len(all_tickers)    
     state_size = 5      # open, high, low, adjusted close, volume
-    train_to_test_ratio = 0.9
+    training_ratio = 0.8
 
     # start, end, interval can be changed
     daily_data = yf.download(
         tickers = str_tickers,
-        start = "2000-01-01",
+        start = "2010-01-01",
         end = "2020-01-01",
         interval = "1d", 
         group_by = "ticker"
@@ -33,7 +33,7 @@ def get_data(all_tickers):
     daily_data = tf.transpose(daily_data, perm=[1, 0, 2]) 
     # now daily_data has dimension [num_stocks, num_days, state_size]
 
-    cutoff = int(train_to_test_ratio * num_days)
+    cutoff = int(training_ratio * num_days)
     train_data = daily_data[:, 0:cutoff, :]
     test_data = daily_data[:, cutoff:num_days, :]
     #TODO: necessary to save this data?
@@ -51,4 +51,4 @@ def get_data(all_tickers):
 #     interval = "1d",
 #     group_by = "ticker"
 # )
-# data_hourly = tf.convert_to_tensor(data_hourly)
+# data_hourly = tf.convert_to_tensor(data_hourly))

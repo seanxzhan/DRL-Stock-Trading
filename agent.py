@@ -170,26 +170,6 @@ class PolicyGradientAgent(tf.keras.Model):
         loss = actor_loss + critic_loss  # scalar loss of the batch
         return loss
 
-    # def actor_loss(self, action_probs, actions_taken, discounted_reward):
-    #     """
-    #     computes the loss of a single forward pass for the agent's actor module
-    #
-    #     :param action_probs: a batch of probabilities of the agent taking each aciton. [batch_sz * self.num_actions]
-    #     :param actions_taken: the sequence of actions that the agent actually took in the episode. [batch_sz]
-    #     :param discounted_reward: discounted rewards through the batch. [batch_sz]
-    #     """
-    #     pass
-    #
-    # def critic_loss(self, action_probs, actions_taken, discounted_reward):
-    #     """
-    #     computes the loss of a single forward pass for the agent's critic module
-    #
-    #     :param action_probs: a batch of probabilities of the agent taking each aciton. [batch_sz * self.num_actions]
-    #     :param actions_taken: the sequence of actions that the agent actually took in the episode. [batch_sz]
-    #     :param discounted_reward: discounted rewards through the batch. [batch_sz]
-    #     """
-    #     pass
-
     def remember(self, states, actions, discounted_rewards):
         """
         put an entire episode of states, actions, rewards into the memory-replay buffer
