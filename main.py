@@ -18,7 +18,7 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
     :param num_rand_stocks: number of stocks randomized in training
     :param episode_max_days: the maximum number of days of trading actions in an episode
 
-    :return losses
+    :return losses and rewards
     """
     num_days = train_data.shape[1]
     loss_list = []
@@ -27,6 +27,9 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
     start = 0  # start of price history slice (inclusive)
     end = start + episode_max_days + offset  # end of price history slice (exclusive)
     num_episodes = (num_days - offset) // episode_max_days
+
+    # a list of total cash value
+    rewards_list = []
 
     for episode in range(num_episodes):
         print(f"Training episode {episode+1} of {num_episodes}")
@@ -55,6 +58,7 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
 
         with tf.GradientTape() as tape:
             states, actions, rewards = env.generate_episode(model)
+            rewards_list.extend(rewards)
             discounted_rewards = discount(rewards)
             model.remember(states, actions, discounted_rewards)
             repl_states, repl_actions, repl_discounted_rewards = model.experience_replay()
@@ -62,7 +66,7 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
         gradients = tape.gradient(model_loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
         loss_list.append(model_loss.numpy())  # reward at end of batch
-    return list(loss_list)
+    return list(loss_list), rewards_list
 
 
 def test(test_data, model, tickers, randomize, num_rand_stocks=0):
@@ -104,7 +108,7 @@ def main():
     """
     Main
     """
-    NUM_EPOCH = 5
+    NUM_EPOCH = 10
     RESUME = False
     SAVE = False
     RANDOMIZE = False
@@ -146,8 +150,9 @@ def main():
         print(f'======================== EPOCH {i+1} of {NUM_EPOCH} ========================')
         # start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
         # sample = train_data[:, start_day:, :]
-        epoch_loss = train(train_data, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks)  # change to sample for random initial time step
-        print(f"Avg Loss for epoch {i} is {tf.reduce_mean(epoch_loss)}")
+        epoch_loss, rewards_list = train(train_data, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks)  # change to sample for random initial time step
+        print(f"Avg Loss for epoch {i + 1} is {tf.reduce_mean(epoch_loss)}")
+        # visualize_linegraph(rewards_list)
     if SAVE:
         save_model(model, 'saved_model')
 
