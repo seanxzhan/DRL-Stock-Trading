@@ -3,7 +3,6 @@ import tensorflow as tf
 import random
 
 
-
 class PolicyGradientAgent(tf.keras.Model):
     def __init__(self, datum_size, num_stocks, past_num):
         """
@@ -46,10 +45,12 @@ class PolicyGradientAgent(tf.keras.Model):
         self.buffer_episode_lens = []  # a list of `episode length` of experience that were stored in the buffer
                                         # used to facilitate self.forget()
         self.num_actions = 3 * self.num_stocks
-        self.actor_H1 = 14  # hidden layer output sizes
-        self.actor_H2 = 30
-        self.critic_H1 = 60
-        self.critic_H2 = 30
+        self.actor_H1 = 64  # hidden layer output sizes
+        self.actor_H2 = 64
+        self.actor_H3 = 64
+        self.actor_H4 = 64
+        self.critic_H1 = 64
+        self.critic_H2 = 32
         # self.lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=[30, 110, 220, 300],
         #                                                                         values=[0.01, 0.005, 0.003, 0.002,
         #                                                                                 0.001])
@@ -64,7 +65,9 @@ class PolicyGradientAgent(tf.keras.Model):
         self.actor_dropout_1 = tf.keras.layers.Dropout(rate=0.1)
         self.actor_gru_2 = tf.keras.layers.GRU(self.actor_H2, kernel_initializer=initializer)
         self.actor_dropout_2 = tf.keras.layers.Dropout(rate=0.1)
-        self.actor_dense = tf.keras.layers.Dense(self.num_actions, kernel_initializer=initializer)
+        self.actor_dense_1 = tf.keras.layers.Dense(self.actor_H3, activation='relu', kernel_initializer=initializer)
+        self.actor_dense_2 = tf.keras.layers.Dense(self.actor_H4, activation='relu', kernel_initializer=initializer)
+        self.actor_dense_3 = tf.keras.layers.Dense(self.num_actions, kernel_initializer=initializer)
         self.normalizor = tf.keras.layers.LayerNormalization()
         self.critic_dense_1 = tf.keras.layers.Dense(self.critic_H1, activation='relu', kernel_initializer=initializer)
         self.critic_dense_2 = tf.keras.layers.Dense(self.critic_H2, activation='relu', kernel_initializer=initializer)
@@ -109,13 +112,19 @@ class PolicyGradientAgent(tf.keras.Model):
         price_history = tf.transpose(price_history, perm=[0, 2, 1, 3])  # (batch_sz, past_num, num_stocks, datum_size)
         price_history = tf.reshape(price_history, (-1, self.past_num, self.num_stocks * self.datum_size))  # (batch_sz, past_num, num_stocks * datum_size)
         portfolio = [state[1] for state in states]  # (batch_sz, num_stock + 1)
+
         # pass through layers
         # price_history = self.lift(price_history)
         gru_1_out_whole_seq, _ = self.actor_gru_1(price_history)  # (batch_sz, past_num, actor_H1)
         gru_1_out_whole_seq = self.actor_dropout_1(gru_1_out_whole_seq)
-        gru_2_out = self.actor_dropout_2(self.actor_gru_2(gru_1_out_whole_seq))  # (batch_sz, actor_H2)
+        gru_2_out = self.actor_gru_2(gru_1_out_whole_seq)  # (batch_sz, actor_H2)
+        gru_2_out = self.actor_dropout_2(gru_2_out)
         past_and_current_info = tf.concat([gru_2_out, portfolio], axis=1)  # (batch_sz, actor_H2 + num_stock + 1)
-        actor_out = self.actor_dense(past_and_current_info)  # (batch_sz * self.num_actions)
+
+        actor_out = self.actor_dense_1(past_and_current_info)
+        actor_out = self.actor_dense_2(actor_out)
+        actor_out = self.actor_dense_3(actor_out)  # (batch_sz * self.num_actions)
+
         # reshape the output and softmax
         actor_out = tf.reshape(actor_out, (-1, self.num_stocks, 3))
         actor_out = self.normalizor(actor_out)
