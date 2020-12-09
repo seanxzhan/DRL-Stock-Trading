@@ -33,9 +33,6 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
 
     for episode in range(num_episodes):
         print(f"Training episode {episode+1} of {num_episodes}")
-        episode_input = train_data[:, start:end, :]
-        start += episode_max_days
-        end += episode_max_days
 
         if randomize:
             # the last element of tickers is "CASH", we don't include "CASH" in randomization
@@ -48,6 +45,11 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
         else:
             episode_input = train_data
             episode_tickers = tickers
+
+        # Slice of pricing history to generate this episode on
+        episode_input = episode_input[:, start:end, :]
+        start += episode_max_days
+        end += episode_max_days
         
         # (REMOVED) randomize starting date in each episode
         # rand_start = randint(0, int(episode_max_days / 5))
@@ -108,16 +110,17 @@ def main():
     """
     Main
     """
-    NUM_EPOCH = 10
+    NUM_EPOCHS = 10
     RESUME = False
     SAVE = False
     RANDOMIZE = False
 
-    train_tickers = ["AAPL", "EBAY", "MSFT", "INTC", "ADBE"]
+    train_tickers = ["AAPL", "AMZN", "GOOGL", "MSFT"]
+
     if RANDOMIZE:
         # add more stocks to train_tickers if we want
-        train_tickers.extend(["CVS", "DIS", "FDX", "JPM", "WMT"])
-    test_tickers = ["REGN", "AMZN", "JNJ", "HON", "PFE"]
+        train_tickers.extend(["CVS", "DIS", "FDX", "JPM"])
+    test_tickers = ["REGN", "WMT", "JNJ", "HON"]
     train_data, test_data_same_ticks, x_tickers = get_data(train_tickers) # train_data should be the same for both testing methods
     _, test_data_diff_ticks, y_tickers = get_data(test_tickers)
 
@@ -136,7 +139,7 @@ def main():
     past_num = 50
     
     # we can also toggle the number below
-    num_rand_stocks = 5 if RANDOMIZE else num_stocks
+    num_rand_stocks = 4 if RANDOMIZE else num_stocks
 
     # creating model
     if RESUME:
@@ -146,13 +149,13 @@ def main():
 
 
     # training
-    for i in range(NUM_EPOCH):
-        print(f'======================== EPOCH {i+1} of {NUM_EPOCH} ========================')
+    for i in range(NUM_EPOCHS):
+        print(f'\n======================== EPOCH {i+1} of {NUM_EPOCHS} ========================')
         # start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
         # sample = train_data[:, start_day:, :]
-        epoch_loss, rewards_list = train(train_data, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks)  # change to sample for random initial time step
-        print(f"Avg Loss for epoch {i + 1} is {tf.reduce_mean(epoch_loss)}")
-        # visualize_linegraph(rewards_list)
+        episode_max_days = 200
+        epoch_loss = train(train_data, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks, episode_max_days=episode_max_days)
+        print(f"Avg Loss for epoch {i} is {tf.reduce_mean(epoch_loss)}")
     if SAVE:
         save_model(model, 'saved_model')
 

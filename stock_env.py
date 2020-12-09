@@ -88,11 +88,7 @@ class StockEnv():
 
         first_step = True  # boolean variable used to create array for visualization
         # ================ GENERATION ================
-        while np.sum(portfolio_cash) > 0:
-        # while all(i >= 0 for i in portfolio_cash) > 0:  # cannot have negative stocks
-            if timestep > timestep_final:  # we've reached the end of pricing_data
-                break
-
+        while timestep <= timestep_final and np.sum(portfolio_cash) > self.exit_threshold:
             sliced_price_history = self.pricing_data[:, timestep -
                                                         initial_timestep:timestep, :]
             closing_prices = np.reshape(sliced_price_history[:, -1, 3], (-1,))
@@ -149,8 +145,7 @@ class StockEnv():
             states.append(state)
             actions.append(action)
             rewards.append(total_cash_value)
-
-            # For debugging:
+            
             # if self.is_testing:
             #     print("Timestep:", timestep)
             #     print("Closing Prices:", np.round(closing_prices, decimals=2))
@@ -166,7 +161,9 @@ class StockEnv():
                 first_step = False
             else:
                 portfolio_cash_entire = np.hstack((portfolio_cash_entire, portfolio_cash.reshape((-1, 1))))
+        # ================ END GENERATION ================
 
+        print(f"Exit: timestep {timestep - past_num + 1} of {timestep_final - past_num + 1} with portfolio {np.round(portfolio_cash)}")
 
         # adjust rewards to be the difference between total portfolio values between two time steps
         delta_rewards = [rewards[i+1] - rewards[i] for i in range(len(rewards)-1)]
