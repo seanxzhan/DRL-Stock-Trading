@@ -115,6 +115,10 @@ def main():
     SAVE = False
     RANDOMIZE = False
 
+    # TODO
+    # run stocks separately in each episode
+    # individualy pass in stocks w/ evenly distributed initial cash
+
     train_tickers = ["AAPL", "AMZN", "GOOGL", "MSFT"]
 
     if RANDOMIZE:
@@ -154,8 +158,9 @@ def main():
         # start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
         # sample = train_data[:, start_day:, :]
         episode_max_days = 200
-        epoch_loss = train(train_data, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks, episode_max_days=episode_max_days)
-        print(f"Avg Loss for epoch {i} is {tf.reduce_mean(epoch_loss)}")
+        epoch_loss, rewards_list = train(train_data, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks, episode_max_days=episode_max_days)
+        print(f"Avg Loss for epoch {i + 1} is {tf.reduce_mean(epoch_loss)}")
+        # visualize_linegraph(rewards_list)
     if SAVE:
         save_model(model, 'saved_model')
 

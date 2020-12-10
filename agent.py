@@ -55,7 +55,7 @@ class PolicyGradientAgent(tf.keras.Model):
         #                                                                         values=[0.01, 0.005, 0.003, 0.002,
         #                                                                                 0.001])
         # self.lr_schedule = 0.003
-        self.lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(initial_learning_rate=0.003,
+        self.lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(initial_learning_rate=0.03,
                                                                           decay_rate=0.98, decay_steps=100000)
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
 
@@ -127,7 +127,7 @@ class PolicyGradientAgent(tf.keras.Model):
         actor_out = self.actor_dense_3(actor_out)  # (batch_sz * self.num_actions)
 
         # reshape the output and softmax
-        actor_out = tf.reshape(actor_out_2, (-1, self.num_stocks, 3))
+        actor_out = tf.reshape(actor_out, (-1, self.num_stocks, 3))
         actor_out = self.normalizor(actor_out)
         action_probs = tf.nn.softmax(actor_out)  # softmaxes across last dimension only
         return action_probs, past_and_current_info
