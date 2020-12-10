@@ -14,7 +14,8 @@ def get_data(all_tickers):
     str_tickers = ' '.join(all_tickers)
     num_stocks = len(all_tickers)
     datum_size = 5      # open, high, low, adjusted close, volume
-    training_ratio = 0.9
+    training_ratio = 0.8
+    validating_ratio = 0.1
 
     # start, end, interval can be changed
     daily_data = yf.download(
@@ -33,9 +34,11 @@ def get_data(all_tickers):
     daily_data = tf.transpose(daily_data, perm=[1, 0, 2]) 
     # now daily_data has dimension [num_stocks, num_days, datum_size]
 
-    cutoff = int(training_ratio * num_days)
-    train_data = daily_data[:, 0:cutoff, :]
-    test_data = daily_data[:, cutoff:num_days, :]
+    train_cutoff = int(training_ratio * num_days)
+    valid_cutoff = int(validating_ratio * num_days) + train_cutoff
+    train_data = daily_data[:, 0:train_cutoff, :]
+    valid_data = daily_data[:, train_cutoff:valid_cutoff, :]
+    test_data = daily_data[:, valid_cutoff:num_days, :]
 
     all_tickers.append("CASH")
-    return train_data, test_data, all_tickers
+    return train_data, valid_data, test_data, all_tickers

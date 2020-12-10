@@ -114,6 +114,7 @@ def main():
     RESUME = False
     SAVE = False
     RANDOMIZE = False
+    VALIDATING = True
 
     # TODO
     # run stocks separately in each episode
@@ -125,8 +126,8 @@ def main():
         # add more stocks to train_tickers if we want
         train_tickers.extend(["CVS", "DIS", "FDX", "JPM"])
     test_tickers = ["REGN", "WMT", "JNJ", "HON"]
-    train_data, test_data_same_ticks, x_tickers = get_data(train_tickers) # train_data should be the same for both testing methods
-    _, test_data_diff_ticks, y_tickers = get_data(test_tickers)
+    train_data, valid_data_same_stocks, test_data_same_ticks, x_tickers = get_data(train_tickers) # train_data should be the same for both testing methods
+    _, _, test_data_diff_ticks, y_tickers = get_data(test_tickers)
 
     # The following block is removed in order to increase the testing period.
     # testing_days = 200
@@ -161,6 +162,10 @@ def main():
         epoch_loss, rewards_list = train(train_data, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks, episode_max_days=episode_max_days)
         print(f"Avg Loss for epoch {i + 1} is {tf.reduce_mean(epoch_loss)}")
         # visualize_linegraph(rewards_list)
+        # we use validating to determine when our model is overfitting / for adjusting hyperparameters
+        if VALIDATING:
+            print("\n===== validating on the same stocks ... =====")
+            test(test_data_same_ticks, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks)
     if SAVE:
         save_model(model, 'saved_model')
 
