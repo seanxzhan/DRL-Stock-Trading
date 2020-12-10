@@ -12,5 +12,9 @@
 > `stock_env.py` contains the simulation environment of the stock market. It contains functions allowing the agent to 
 >sample episodes of historical stock data using the agent's policy.
 
+> `visual_helpers.py` contains helper functions to visualize the portfolio the agent is managing
+
+> `rnn.py` contains a pre-trained Gated Recurrent Unit that can predict stock prices
+
 ## Notes
-currently using the `course env`, if this needs to be updated, please push the new `requirements.txt`
+use the `create_venv.sh` bash script to create a virtual environment required for this repo 

@@ -2,19 +2,20 @@ import yfinance as yf
 import tensorflow as tf
 
 
-def get_data(all_tickers):
+def get_data(all_tickers, training_ratio=0.8):
     """
     Import data from yfinance and split data into training set and testing set
 
     :param all_tickers: a list of all the Stock names whose data needs to be retrived
+    :param training_ratio: the ratio of the training set in the whole dataset
 
-    :returns: A tuple of tensors (training set, testing set). 
-              Each tensor has dimension [num_stocks, num_days, datum_size]
+    :returns: (train_data, test_data, all_tickers)
+              Each data tensor has dimension (num_stocks, num_days, datum_size)
+              all_tickers is a list with "CASH" appended to the end of input tickers
     """
     str_tickers = ' '.join(all_tickers)
     num_stocks = len(all_tickers)
     datum_size = 5      # open, high, low, adjusted close, volume
-    training_ratio = 0.8
 
     # start, end, interval can be changed
     daily_data = yf.download(
