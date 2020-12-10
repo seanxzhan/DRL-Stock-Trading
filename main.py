@@ -18,7 +18,7 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
     :param num_rand_stocks: number of stocks randomized in training
     :param episode_max_days: the maximum number of days of trading actions in an episode
 
-    :return losses
+    :return losses and rewards
     """
     num_days = train_data.shape[1]
     loss_list = []
@@ -27,6 +27,9 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
     start = 0  # start of price history slice (inclusive)
     end = start + episode_max_days + offset  # end of price history slice (exclusive)
     num_episodes = (num_days - offset) // episode_max_days
+
+    # a list of total cash value
+    rewards_list = []
 
     for episode in range(num_episodes):
         print(f"Training episode {episode+1} of {num_episodes}")
@@ -57,6 +60,7 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
 
         with tf.GradientTape() as tape:
             states, actions, rewards = env.generate_episode(model)
+            rewards_list.extend(rewards)
             discounted_rewards = discount(rewards)
             model.remember(states, actions, discounted_rewards)
             repl_states, repl_actions, repl_discounted_rewards = model.experience_replay()
@@ -64,7 +68,7 @@ def train(train_data, model, tickers, randomize, num_rand_stocks=0, episode_max_
         gradients = tape.gradient(model_loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
         loss_list.append(model_loss.numpy())  # reward at end of batch
-    return list(loss_list)
+    return list(loss_list), rewards_list
 
 
 def test(test_data, model, tickers, randomize, num_rand_stocks=0):
@@ -110,6 +114,11 @@ def main():
     RESUME = False
     SAVE = False
     RANDOMIZE = False
+    VALIDATING = True
+
+    # TODO
+    # run stocks separately in each episode
+    # individualy pass in stocks w/ evenly distributed initial cash
 
     train_tickers = ["AAPL", "AMZN", "GOOGL", "MSFT"]
 
@@ -117,8 +126,8 @@ def main():
         # add more stocks to train_tickers if we want
         train_tickers.extend(["CVS", "DIS", "FDX", "JPM"])
     test_tickers = ["REGN", "WMT", "JNJ", "HON"]
-    train_data, test_data_same_ticks, x_tickers = get_data(train_tickers) # train_data should be the same for both testing methods
-    _, test_data_diff_ticks, y_tickers = get_data(test_tickers)
+    train_data, valid_data_same_stocks, test_data_same_ticks, x_tickers = get_data(train_tickers) # train_data should be the same for both testing methods
+    _, _, test_data_diff_ticks, y_tickers = get_data(test_tickers)
 
     # The following block is removed in order to increase the testing period.
     # testing_days = 200
@@ -150,8 +159,13 @@ def main():
         # start_day = randint(0, num_days - model.past_num - model.batch_size)  # TODO: inefficient usage of data?
         # sample = train_data[:, start_day:, :]
         episode_max_days = 200
-        epoch_loss = train(train_data, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks, episode_max_days=episode_max_days)
-        print(f"Avg Loss for epoch {i} is {tf.reduce_mean(epoch_loss)}")
+        epoch_loss, rewards_list = train(train_data, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks, episode_max_days=episode_max_days)
+        print(f"Avg Loss for epoch {i + 1} is {tf.reduce_mean(epoch_loss)}")
+        # visualize_linegraph(rewards_list)
+        # we use validating to determine when our model is overfitting / for adjusting hyperparameters
+        if VALIDATING:
+            print("\n===== validating on the same stocks ... =====")
+            test(valid_data_same_stocks, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks)
     if SAVE:
         save_model(model, 'saved_model')
 

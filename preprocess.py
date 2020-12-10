@@ -2,7 +2,7 @@ import yfinance as yf
 import tensorflow as tf
 
 
-def get_data(all_tickers, training_ratio=0.8):
+def get_data(all_tickers, training_ratio=0.8, validating_ratio=0.1):
     """
     Import data from yfinance and split data into training set and testing set
 
@@ -34,22 +34,11 @@ def get_data(all_tickers, training_ratio=0.8):
     daily_data = tf.transpose(daily_data, perm=[1, 0, 2]) 
     # now daily_data has dimension [num_stocks, num_days, datum_size]
 
-    cutoff = int(training_ratio * num_days)
-    train_data = daily_data[:, 0:cutoff, :]
-    test_data = daily_data[:, cutoff:num_days, :]
-    #TODO: necessary to save this data?
+    train_cutoff = int(training_ratio * num_days)
+    valid_cutoff = int(validating_ratio * num_days) + train_cutoff
+    train_data = daily_data[:, 0:train_cutoff, :]
+    valid_data = daily_data[:, train_cutoff:valid_cutoff, :]
+    test_data = daily_data[:, valid_cutoff:num_days, :]
 
-    #all_tickers_cash = ["AAPL", "AMZN", "MSFT", "INTC", "REGN", "CASH"]
     all_tickers.append("CASH")
-    return train_data, test_data, all_tickers
-
-
-# IF WE DECIDE TO DO HOURLY DATA:
-# data_hourly = yf.download(
-#     tickers = "AAPL", # it seems like yfinance doesn't support hourly data for multiple tickers
-#     start = "2018-11-21", # must be within the last 730 days
-#     end = "2020-11-19",
-#     interval = "1d",
-#     group_by = "ticker"
-# )
-# data_hourly = tf.convert_to_tensor(data_hourly)
+    return train_data, valid_data, test_data, all_tickers
