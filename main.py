@@ -165,7 +165,7 @@ def main():
         # we use validating to determine when our model is overfitting / for adjusting hyperparameters
         if VALIDATING:
             print("\n===== validating on the same stocks ... =====")
-            test(test_data_same_ticks, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks)
+            test(valid_data_same_stocks, model, x_tickers, RANDOMIZE, num_rand_stocks=num_rand_stocks)
     if SAVE:
         save_model(model, 'saved_model')
 
